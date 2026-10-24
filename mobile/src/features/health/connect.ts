@@ -189,6 +189,16 @@ export function syncWindowStart(lastSync: string | undefined, now: Date, firstDa
   return from < addDays(today, -firstDays) ? addDays(today, -firstDays) : from;
 }
 
+/**
+ * The last sync time, but only while its records are still in the store.
+ * Deleting all data or loading the sample keeps settings and drops synced
+ * records; without this the next sync would re-read two days, not the history.
+ */
+export function lastSyncWithData(lastSync: string | undefined, vitals: Pick<VitalEntry, 'source'>[], workouts: Pick<Workout, 'source'>[]): string | undefined {
+  const kept = vitals.some((v) => v.source === 'health-connect') || workouts.some((w) => w.source === 'health-connect');
+  return kept ? lastSync : undefined;
+}
+
 /** Health Connect exercise types (androidx.health.connect ExerciseSessionRecord) with readable names. */
 export const EXERCISE_LABEL: Record<number, string> = {
   0: 'Workout',

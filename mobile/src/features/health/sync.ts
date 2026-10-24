@@ -8,7 +8,7 @@ import type { VitalEntry } from '@/domain/model';
 import { healthStatus, healthSupported, pullHealth, pushVital, unpushVital, type HealthStatus } from '@/lib/health';
 import { useStore } from '@/store';
 
-import { syncWindowStart } from './connect';
+import { lastSyncWithData, syncWindowStart } from './connect';
 
 export interface SyncState {
   /** Null until checked. */
@@ -34,9 +34,9 @@ export function syncHealth(): Promise<void> {
   inFlight = (async () => {
     useHealthSyncState.setState({ syncing: true, error: null });
     try {
-      const { settings, mergeSynced, updateSettings } = useStore.getState();
+      const { settings, vitals, workouts, mergeSynced, updateSettings } = useStore.getState();
       const now = new Date();
-      const pull = await pullHealth(syncWindowStart(settings.healthLastSync, now), now);
+      const pull = await pullHealth(syncWindowStart(lastSyncWithData(settings.healthLastSync, vitals, workouts), now), now);
       const r = mergeSynced({ vitals: pull.vitals, workouts: pull.workouts });
       updateSettings({ healthLastSync: now.toISOString() });
       useHealthSyncState.setState({ syncing: false, last: { ...r, missing: pull.missing } });

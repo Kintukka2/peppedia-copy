@@ -7,6 +7,7 @@ import {
   bloodPressureVitals,
   dailyVitals,
   exerciseLabel,
+  lastSyncWithData,
   mergeDays,
   noonOf,
   sleepVitals,
@@ -88,6 +89,18 @@ describe('Health Connect mapping', () => {
     expect(syncWindowStart(undefined, now)).toEqual(new Date(2026, 6, 26));
     expect(syncWindowStart(new Date('2026-10-23T22:00:00').toISOString(), now)).toEqual(new Date(2026, 9, 21));
     expect(syncWindowStart(new Date('2025-01-01T00:00:00').toISOString(), now)).toEqual(new Date(2026, 6, 26));
+  });
+});
+
+describe('sync window after data is cleared', () => {
+  const last = '2026-10-23T22:00:00.000Z';
+  it('backfills again when synced records are gone (delete all, sample data)', () => {
+    expect(lastSyncWithData(last, [{ source: undefined }], [])).toBeUndefined();
+    expect(syncWindowStart(lastSyncWithData(last, [], []), new Date('2026-10-24T10:00:00'))).toEqual(new Date(2026, 6, 26));
+  });
+  it('stays incremental while synced records are present', () => {
+    expect(lastSyncWithData(last, [{ source: 'health-connect' }], [])).toBe(last);
+    expect(lastSyncWithData(last, [], [{ source: 'health-connect' }])).toBe(last);
   });
 });
 
