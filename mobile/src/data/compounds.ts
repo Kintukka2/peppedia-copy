@@ -44,8 +44,14 @@ const NON_STERILE = 'Infection risk from non-sterile products';
 const RESEARCH_STORAGE =
   'Lyophilised: refrigerate, protect from light. Reconstituted: refrigerate and use within the period stated by the supplier.';
 const NOT_APPROVED_RC = 'Not approved for human use; sold as a research chemical.';
-const FDA_COMPOUNDING_FLAG =
-  'FDA has listed it among bulk drug substances that may present significant safety risks in compounding (check current status).';
+// FDA compounding status per FDA's Category 2 page (content current 22 Apr 2026)
+// and its 503A categories list (updated 14 May 2026).
+const FDA_CAT2 =
+  'FDA lists it among bulk substances with potential significant safety risks for compounding (Category 2).';
+const FDA_CAT2_WITHDRAWN =
+  'FDA previously placed it in Category 2 (bulk substances that may present significant safety risks in compounding); the nomination was later withdrawn, so it is no longer on that list, and it is not on FDA’s 503A bulks list.';
+const PCAC_2026_FOR =
+  'In July 2026 FDA’s Pharmacy Compounding Advisory Committee voted to recommend adding it to the 503A bulks list; the vote is not binding, and adding it would require FDA rulemaking.';
 const WADA_S2 = 'Prohibited at all times (WADA S2)';
 const WADA_S1 = 'Prohibited at all times (WADA S1, anabolic agents)';
 const WADA_S2_MALES = 'Prohibited at all times in males (WADA S2)';
@@ -142,7 +148,7 @@ export const COMPOUNDS: Compound[] = [
       'AOD-9604 corresponds to amino acids 177–191 of human growth hormone with an added tyrosine. In animal and cell studies it stimulated fat breakdown and inhibited fat formation without the growth-promoting or blood-glucose effects of full growth hormone, and it does not meaningfully raise IGF-1. These effects did not translate into clinically meaningful weight loss in human trials.',
     regulatory: {
       status: 'unapproved',
-      detail: `Not approved for human use; sold as a research chemical. Development as an obesity treatment was discontinued after a phase 2b trial. ${FDA_COMPOUNDING_FLAG}`,
+      detail: `Not approved for human use; sold as a research chemical. Development as an obesity treatment was discontinued after a phase 2b trial. ${FDA_CAT2_WITHDRAWN}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -206,7 +212,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'investigational',
       detail:
-        'Not approved by FDA or EMA. An intravenous formulation (Zyesami) was studied for COVID-19 respiratory failure but has not been approved. An injectable combination with phentolamine is authorised for erectile dysfunction in some European countries. Compounded and research-chemical VIP is unapproved. Check current status.',
+        'Not approved by FDA or EMA. An intravenous formulation (Zyesami) was studied for COVID-19 respiratory failure but has not been approved. An injectable combination with phentolamine is authorised for erectile dysfunction in some European countries. Compounded and research-chemical VIP is unapproved; for compounding, FDA lists vasoactive intestinal peptide in 503A Category 1 (under evaluation). Check current status.',
     },
     evidence: 'limited',
     evidenceNote:
@@ -240,8 +246,7 @@ export const COMPOUNDS: Compound[] = [
       'BPC-157 is a 15-residue fragment derived from a protein found in human gastric juice. In rodent studies it has been reported to speed healing of tendon, muscle, gut and other tissues. Proposed mechanisms include increased blood-vessel growth (VEGF receptor signalling), nitric oxide pathway effects and fibroblast migration; none has been confirmed in humans.',
     regulatory: {
       status: 'unapproved',
-      detail:
-        'Not approved for human use anywhere; sold as a research chemical. FDA has flagged it as a bulk drug substance that may present significant safety risks in compounding, citing possible immunogenicity, impurities and a lack of human safety data.',
+      detail: `Not approved for human use anywhere; sold as a research chemical. FDA previously placed it in Category 2 (bulk substances that may present significant safety risks in compounding), citing possible immunogenicity, impurities and a lack of human safety data; the nomination was later withdrawn, so it is no longer on that list, and it is not on FDA’s 503A bulks list. ${PCAC_2026_FOR}`,
     },
     evidence: 'preclinical',
     evidenceNote:
@@ -334,17 +339,17 @@ export const COMPOUNDS: Compound[] = [
     category: 'metabolic',
     classes: ['amylin-agonist'],
     summary:
-      'A long-acting amylin analogue in late-stage development for obesity, mainly as a once-weekly combination with semaglutide (CagriSema).',
+      'A long-acting amylin analogue developed for obesity, mainly as a once-weekly combination with semaglutide (CagriSema) that has been submitted for FDA approval.',
     mechanism:
       'Cagrilintide is a lipidated analogue of amylin, a hormone released with insulin after meals, engineered for once-weekly dosing. It activates amylin and calcitonin receptors, reducing appetite, slowing stomach emptying and suppressing glucagon after meals. Because it acts through pathways distinct from GLP-1, it is being developed in combination with semaglutide.',
     regulatory: {
       status: 'investigational',
       detail:
-        'Not approved by FDA or EMA. In phase 3 development by Novo Nordisk, mainly as the fixed combination CagriSema (REDEFINE programme). Check current status. Products sold online as "research" cagrilintide are unapproved.',
+        'Not approved by FDA or EMA. Novo Nordisk filed the fixed combination CagriSema (cagrilintide 2.4 mg with semaglutide 2.4 mg) with FDA for weight management in December 2025, based on the REDEFINE phase 3 programme. Check current status. Products sold online as "research" cagrilintide are unapproved.',
     },
-    evidence: 'moderate',
+    evidence: 'extensive',
     evidenceNote:
-      'A phase 2 trial of cagrilintide alone and phase 3 trials of the semaglutide combination have been published; long-term safety and outcome data are still accruing.',
+      'A phase 2 trial of cagrilintide alone and phase 3 trials of the semaglutide combination have been published. In REDEFINE 1, mean weight loss at 68 weeks was 20.4% with CagriSema versus 3.0% with placebo; in a head-to-head trial (REDEFINE 4) it did not show non-inferior weight loss versus tirzepatide 15 mg. Long-term safety and outcome data are still accruing.',
     routes: ['subq'],
     studiedRegimens: [
       {
@@ -424,7 +429,7 @@ export const COMPOUNDS: Compound[] = [
       'CJC-1295 is a modified version of the first 29 amino acids of growth hormone–releasing hormone carrying a reactive "drug affinity complex" (DAC) that bonds to circulating albumin. This greatly extends its duration of action, so one injection stimulates pituitary GH release and raises IGF-1 for about a week or longer. Development as a medicine stopped after early clinical studies.',
     regulatory: {
       status: 'unapproved',
-      detail: `Not approved for human use; sold as a research chemical. Clinical development was discontinued after early-phase studies. ${FDA_COMPOUNDING_FLAG}`,
+      detail: `Not approved for human use; sold as a research chemical. Clinical development was discontinued after early-phase studies. ${FDA_CAT2_WITHDRAWN}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -433,7 +438,7 @@ export const COMPOUNDS: Compound[] = [
     pk: {
       halfLifeHours: 168,
       route: 'subq',
-      note: 'Estimated mean half-life 5.8–8.1 days after a single injection in healthy adults.',
+      note: 'Estimated mean half-life 5.8–8.1 days after a single injection in healthy adults (7 days used for the curve).',
       source: 'Published human PK study (Teichman et al., J Clin Endocrinol Metab 2006)',
     },
     studiedRegimens: [],
@@ -471,7 +476,7 @@ export const COMPOUNDS: Compound[] = [
       'Dihexa is a modified fragment of angiotensin IV designed to be stable and to enter the brain. In laboratory and rodent studies it enhanced hepatocyte growth factor (HGF) signalling through the c-Met receptor, promoting new synaptic connections and improving performance in rat memory tests. HGF/c-Met signalling is also involved in cancer growth.',
     regulatory: {
       status: 'unapproved',
-      detail: `${NOT_APPROVED_RC} ${FDA_COMPOUNDING_FLAG}`,
+      detail: `${NOT_APPROVED_RC} ${FDA_CAT2_WITHDRAWN}`,
     },
     evidence: 'preclinical',
     evidenceNote: 'Only cell and animal data have been published; there are no published human trials.',
@@ -497,7 +502,7 @@ export const COMPOUNDS: Compound[] = [
       'DSIP was identified in the blood of rabbits during induced sleep and named for its apparent ability to promote slow-wave (delta) sleep. Its receptor and natural role remain unclear, and a gene encoding it has not been identified. Proposed effects on sleep, stress hormones and pain have not been consistently reproduced.',
     regulatory: {
       status: 'unapproved',
-      detail: `${NOT_APPROVED_RC} ${FDA_COMPOUNDING_FLAG}`,
+      detail: `${NOT_APPROVED_RC} ${FDA_CAT2_WITHDRAWN} In July 2026 FDA’s Pharmacy Compounding Advisory Committee voted against recommending it for the 503A bulks list.`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -580,26 +585,33 @@ export const COMPOUNDS: Compound[] = [
   {
     id: 'elamipretide',
     name: 'Elamipretide',
-    aliases: ['SS-31', 'MTP-131', 'Bendavia'],
+    aliases: ['Forzinity', 'SS-31', 'MTP-131', 'Bendavia'],
     category: 'longevity',
     classes: ['mitochondrial'],
     summary:
-      'A mitochondria-targeted tetrapeptide studied in rare mitochondrial diseases, most notably Barth syndrome.',
+      'A mitochondria-targeted tetrapeptide studied in rare mitochondrial diseases and given US accelerated approval for Barth syndrome.',
     mechanism:
       'Elamipretide is a small, cell-permeable peptide that concentrates in the inner mitochondrial membrane and binds cardiolipin, a lipid needed for the structure of the energy-producing respiratory chain. By stabilising cardiolipin it is proposed to improve mitochondrial energy production and reduce oxidative stress. Barth syndrome, its main target, is caused by abnormal cardiolipin.',
     regulatory: {
       status: 'approved',
       detail:
-        'FDA accelerated approval in September 2025 as Forzinity (Stealth BioTherapeutics) for Barth syndrome; continued approval depends on confirmatory evidence. Not approved by EMA. "SS-31" sold online is an unapproved research chemical, not the approved product.',
+        'FDA accelerated approval in September 2025 as Forzinity (Stealth BioTherapeutics) to improve muscle strength in people with Barth syndrome weighing at least 30 kg, based on knee-extensor strength (an intermediate endpoint); continued approval depends on a confirmatory trial. Not approved by EMA. "SS-31" sold online is an unapproved research chemical, not the approved product.',
     },
     evidence: 'moderate',
     evidenceNote:
-      'Several phase 2 and 3 trials (mitochondrial myopathy, Barth syndrome, heart failure, eye disease) have been run; key randomised trials missed their primary endpoints, with some secondary and open-label extension findings supportive.',
+      'Several phase 2 and 3 trials (mitochondrial myopathy, Barth syndrome, heart failure, eye disease) have been run; key randomised trials missed their primary endpoints. The Barth syndrome approval rests on 12 patients, with strength gains seen in the open-label extension rather than the randomised phase.',
     routes: ['subq', 'iv'],
     studiedRegimens: [
       {
+        context: 'Barth syndrome, patients weighing at least 30 kg (Forzinity)',
+        regimen:
+          '40 mg SC once daily into the abdomen or thigh; 20 mg once daily in adults with eGFR below 30 mL/min who are not on dialysis.',
+        source: 'Forzinity US prescribing information',
+      },
+      {
         context: 'Barth syndrome (TAZPOWER, phase 2/3)',
-        regimen: '40 mg SC once daily (randomised crossover, then open-label extension).',
+        regimen:
+          '40 mg SC once daily (two 12-week randomised crossover periods versus placebo, then open-label extension).',
         source: 'TAZPOWER trial',
       },
       {
@@ -608,11 +620,25 @@ export const COMPOUNDS: Compound[] = [
         source: 'MMPOWER-3 trial',
       },
     ],
-    commonSideEffects: ['Injection-site redness, pain or itching (very common)', 'Headache'],
-    seriousRisks: [NOT_ESTABLISHED, 'Injection-site reactions leading to stopping', UNVERIFIED],
-    cautions: ['Pregnancy and breastfeeding (limited data)'],
-    storage: RESEARCH_STORAGE,
+    commonSideEffects: [
+      'Injection-site redness, pain, hardening or itching (very common)',
+      'Raised eosinophil count (lab finding, usually transient)',
+    ],
+    seriousRisks: [
+      'Hypersensitivity reactions, including serious allergic reactions',
+      'Injection-site reactions leading to stopping',
+      NOT_ESTABLISHED,
+      UNVERIFIED,
+    ],
+    cautions: [
+      'Severe kidney impairment (lower dose)',
+      'Neonates (contains benzyl alcohol)',
+      'Pregnancy and breastfeeding (limited data)',
+    ],
+    storage:
+      'Forzinity: refrigerate unopened vials at 2–8 °C; do not freeze. After first use, keep refrigerated or at room temperature (20–25 °C) and discard 8 days after opening.',
     sources: [
+      dailymed('Forzinity', 'DailyMed: Forzinity label'),
       pubmed('elamipretide', 'PubMed: elamipretide'),
       pubmed('elamipretide Barth syndrome', 'PubMed: elamipretide in Barth syndrome'),
       trials('elamipretide', 'ClinicalTrials.gov: elamipretide'),
@@ -630,7 +656,7 @@ export const COMPOUNDS: Compound[] = [
       'Epitalon (Ala-Glu-Asp-Gly) was designed to reproduce the activity of epithalamin, an extract of bovine pineal gland. Studies by its developers reported telomerase activation in cell cultures and effects on melatonin rhythms and lifespan in rodents. These findings have not been widely replicated by independent groups.',
     regulatory: {
       status: 'unapproved',
-      detail: `${NOT_APPROVED_RC} ${FDA_COMPOUNDING_FLAG}`,
+      detail: `${NOT_APPROVED_RC} ${FDA_CAT2_WITHDRAWN} ${PCAC_2026_FOR}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -687,7 +713,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'unapproved',
       detail:
-        'Not approved as a medicine. Widely used as a cosmetic ingredient (copper tripeptide-1) in topical products. Injectable forms are not approved for human use and are sold as research chemicals.',
+        'Not approved as a medicine. Widely used as a cosmetic ingredient (copper tripeptide-1) in topical products. Injectable forms are not approved for human use and are sold as research chemicals. For compounding, FDA previously placed injectable GHK-Cu in Category 2 (potential significant safety risks); that nomination was withdrawn in 2026, and FDA lists non-injectable GHK-Cu in 503A Category 1 (under evaluation), with advisory committee review planned before the end of February 2027.',
     },
     evidence: 'limited',
     evidenceNote:
@@ -723,7 +749,8 @@ export const COMPOUNDS: Compound[] = [
       'GHRP-2 activates the growth hormone secretagogue receptor (GHS-R1a, the ghrelin receptor) in the pituitary and hypothalamus, triggering pulses of GH release. It also increases appetite and can raise cortisol (via ACTH) and prolactin. Its GH effect is strongest when combined with GHRH.',
     regulatory: {
       status: 'unapproved',
-      detail: `Not approved by FDA or EMA. In Japan, pralmorelin has been approved as a diagnostic agent for growth hormone deficiency. Elsewhere it is sold as a research chemical. ${FDA_COMPOUNDING_FLAG}`,
+      detail:
+        'Not approved by FDA or EMA. In Japan, pralmorelin has been approved as a diagnostic agent for growth hormone deficiency. Elsewhere it is sold as a research chemical. For outsourcing facilities (503B), FDA lists it among bulk substances with potential significant safety risks for injectable and nasal use (Category 2); for 503A pharmacies it was nominated without adequate support (Category 3).',
     },
     evidence: 'limited',
     evidenceNote:
@@ -763,7 +790,7 @@ export const COMPOUNDS: Compound[] = [
       'GHRP-6 was one of the first synthetic growth hormone secretagogues, developed before ghrelin itself was discovered. It activates the ghrelin receptor (GHS-R1a), producing GH release, a marked increase in hunger and smaller rises in cortisol and prolactin.',
     regulatory: {
       status: 'unapproved',
-      detail: `${NOT_APPROVED_RC} ${FDA_COMPOUNDING_FLAG}`,
+      detail: `${NOT_APPROVED_RC} For outsourcing facilities (503B), FDA lists it among bulk substances with potential significant safety risks (Category 2); for 503A pharmacies it was nominated without adequate support (Category 3).`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -890,7 +917,7 @@ export const COMPOUNDS: Compound[] = [
       'Competitive athletes (prohibited in males)',
     ],
     storage:
-      'Urinary hCG powder: store at room temperature before mixing; after reconstitution refrigerate and use within the time on the label. Recombinant prefilled pens: refrigerate as labelled.',
+      'Urinary hCG powder: store at room temperature before mixing; after reconstitution refrigerate and use within the time on the label. Recombinant prefilled syringes or pens: refrigerate as labelled.',
     antiDoping: WADA_S2_MALES,
     sources: [
       dailymed('chorionic gonadotropin', 'DailyMed: chorionic gonadotropin labels'),
@@ -952,7 +979,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'investigational',
       detail:
-        'Not approved by FDA or EMA. Studied by Merck in the 1990s–2000s and later as LUM-201 for paediatric growth hormone deficiency (phase 2); check current status. Widely sold as a research chemical.',
+        'Not approved by FDA or EMA. Studied by Merck in the 1990s–2000s and later as LUM-201 for paediatric growth hormone deficiency (phase 2); check current status. Widely sold as a research chemical. FDA lists ibutamoren mesylate among bulk substances with potential significant safety risks for compounding (Category 2), citing the heart failure signal.',
     },
     evidence: 'moderate',
     evidenceNote:
@@ -1049,7 +1076,8 @@ export const COMPOUNDS: Compound[] = [
       'Ipamorelin activates the growth hormone secretagogue (ghrelin) receptor, producing a pulse of GH release. In animal studies it was more selective than older GHRPs, with little effect on cortisol or prolactin at GH-releasing doses. It was also studied for its ghrelin-like effects on gut motility.',
     regulatory: {
       status: 'unapproved',
-      detail: `Not approved for human use; sold as a research chemical. A phase 2 trial for postoperative ileus did not lead to further development. ${FDA_COMPOUNDING_FLAG}`,
+      detail:
+        'Not approved for human use; sold as a research chemical. A phase 2 trial for postoperative ileus did not lead to further development. For outsourcing facilities (503B), FDA lists ipamorelin acetate among bulk substances with potential significant safety risks (Category 2); it was previously in Category 2 for 503A pharmacies too, until that nomination was withdrawn.',
     },
     evidence: 'limited',
     evidenceNote:
@@ -1090,8 +1118,7 @@ export const COMPOUNDS: Compound[] = [
       'Kisspeptins act on the KISS1 receptor (GPR54) on GnRH neurons in the hypothalamus, stimulating GnRH release and, downstream, LH and FSH. Kisspeptin-10 is the C-terminal decapeptide that retains full receptor activity. In small human studies, injections acutely raised LH and testosterone in men; it has a short half-life.',
     regulatory: {
       status: 'unapproved',
-      detail:
-        'Not approved for any indication; used in academic human research. Products sold online are research chemicals.',
+      detail: `Not approved for any indication; used in academic human research. Products sold online are research chemicals. ${FDA_CAT2}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -1100,11 +1127,18 @@ export const COMPOUNDS: Compound[] = [
     studiedRegimens: [],
     commonSideEffects: ['Few effects reported in short studies', 'Injection-site reactions'],
     seriousRisks: [LONG_TERM_UNKNOWN, 'Effects of repeated dosing unclear', UNVERIFIED],
-    cautions: ['Hormone-sensitive cancers', 'Pregnancy and breastfeeding', 'Under 18 (no safety data)'],
+    cautions: [
+      'Hormone-sensitive cancers',
+      'Pregnancy and breastfeeding',
+      'Under 18 (no safety data)',
+      'Competitive athletes (prohibited in males)',
+    ],
     storage: RESEARCH_STORAGE,
+    antiDoping: WADA_S2_MALES,
     sources: [
       pubmed('kisspeptin-10 human', 'PubMed: kisspeptin-10 in humans'),
       pubmed('kisspeptin luteinizing hormone testosterone men', 'PubMed: kisspeptin and LH in men'),
+      WADA_LIST,
     ],
   },
   {
@@ -1119,7 +1153,7 @@ export const COMPOUNDS: Compound[] = [
       'KPV is the C-terminal three amino acids (lysine–proline–valine) of alpha-melanocyte-stimulating hormone. In cell and mouse studies it reduced inflammatory signalling, including NF-κB activation, and lessened colitis; uptake into gut cells via the PepT1 transporter has been proposed. Unlike full alpha-MSH it is not expected to cause pigmentation.',
     regulatory: {
       status: 'unapproved',
-      detail: `${NOT_APPROVED_RC} ${FDA_COMPOUNDING_FLAG}`,
+      detail: `${NOT_APPROVED_RC} ${FDA_CAT2_WITHDRAWN} ${PCAC_2026_FOR}`,
     },
     evidence: 'preclinical',
     evidenceNote:
@@ -1148,7 +1182,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'approved',
       detail:
-        'FDA- and EMA-approved as Victoza (type 2 diabetes, including cardiovascular risk reduction) and Saxenda (chronic weight management in adults and adolescents aged 12 and over). Generic versions have been approved in the US.',
+        'FDA- and EMA-approved as Victoza (type 2 diabetes, including cardiovascular risk reduction) and Saxenda (chronic weight management in adults, and in adolescents aged 12 and over with obesity who weigh more than 60 kg). Generic versions have been approved in the US.',
     },
     evidence: 'extensive',
     evidenceNote:
@@ -1189,7 +1223,7 @@ export const COMPOUNDS: Compound[] = [
       'Gallbladder disease',
       'Hypoglycaemia with insulin or sulfonylureas',
       'Increased heart rate',
-      'Suicidal thoughts (monitor, Saxenda)',
+      'Acute kidney injury from dehydration',
     ],
     cautions: [
       'Personal or family history of MTC',
@@ -1219,7 +1253,7 @@ export const COMPOUNDS: Compound[] = [
       'LL-37 is a 37-amino-acid peptide cleaved from the precursor protein hCAP18 and made by white blood cells and epithelial cells. It can disrupt bacterial membranes and neutralise endotoxin, and it signals to immune cells, influencing inflammation, wound healing and blood-vessel growth. Its immune effects can be pro- or anti-inflammatory depending on context, and excess LL-37 is implicated in psoriasis and rosacea.',
     regulatory: {
       status: 'unapproved',
-      detail: `Not approved for human use. A topical formulation has been tested in small phase 2 trials for hard-to-heal venous leg ulcers. Injectable forms are sold as research chemicals. ${FDA_COMPOUNDING_FLAG}`,
+      detail: `Not approved for human use. A topical formulation has been tested in small phase 2 trials for hard-to-heal venous leg ulcers. Injectable forms are sold as research chemicals. ${FDA_CAT2_WITHDRAWN}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -1253,7 +1287,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'investigational',
       detail:
-        'Approved in China (2025) for chronic weight management, where it is developed by Innovent; not approved by FDA or EMA. Check current status.',
+        'Approved in China in 2025 (as Xinermei, developed there by Innovent under licence from Eli Lilly) for chronic weight management and, later that year, for glycaemic control in type 2 diabetes. Not approved by FDA or EMA. Check current status.',
     },
     evidence: 'moderate',
     evidenceNote:
@@ -1358,7 +1392,7 @@ export const COMPOUNDS: Compound[] = [
       'Melanotan II is a cyclic analogue of alpha-MSH that activates several melanocortin receptors. MC1R activation increases melanin production and skin darkening, while MC4R activation affects sexual arousal and appetite. Its lack of selectivity explains side effects such as nausea, flushing and spontaneous erections.',
     regulatory: {
       status: 'unapproved',
-      detail: `Not approved for human use anywhere; sold as a research chemical. Health regulators in several countries have warned consumers against it. ${FDA_COMPOUNDING_FLAG}`,
+      detail: `Not approved for human use anywhere; sold as a research chemical. Health regulators in several countries have warned consumers against it. ${FDA_CAT2_WITHDRAWN}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -1441,7 +1475,7 @@ export const COMPOUNDS: Compound[] = [
       'MOTS-c is encoded by a short open reading frame within the mitochondrial 12S rRNA gene. In cell and mouse studies it acts mainly on skeletal muscle, activating AMPK signalling and improving insulin sensitivity, and under metabolic stress it can move into the nucleus to influence gene expression. Circulating levels have been measured in people, but its effects as a drug in humans are unknown.',
     regulatory: {
       status: 'unapproved',
-      detail: `Not approved for human use; sold as a research chemical. A modified analogue entered early-stage human trials but was not developed further. ${FDA_COMPOUNDING_FLAG}`,
+      detail: `Not approved for human use; sold as a research chemical. A modified analogue entered early-stage human trials but was not developed further. ${FDA_CAT2_WITHDRAWN} ${PCAC_2026_FOR}`,
     },
     evidence: 'preclinical',
     evidenceNote:
@@ -1470,7 +1504,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'unapproved',
       detail:
-        'Not an approved medicine for these uses. Given as IV or injectable preparations by clinics (often compounded) and sold as a dietary supplement.',
+        'Not an approved medicine for these uses. Given as IV or injectable preparations by clinics (often compounded) and sold as a dietary supplement. For compounding, FDA lists NAD in 503A Category 1 (under evaluation).',
     },
     evidence: 'limited',
     evidenceNote:
@@ -1491,7 +1525,7 @@ export const COMPOUNDS: Compound[] = [
       'Quality varies between compounded and supplement products',
     ],
     cautions: ['Pregnancy and breastfeeding', 'Active cancer (theoretical concern)'],
-    antiDoping: 'IV infusions over 100 mL per 12 hours are prohibited (WADA M2)',
+    antiDoping: 'IV infusions or injections over 100 mL per 12 hours are prohibited (WADA M2.2)',
     sources: [
       pubmed('NAD+ intravenous infusion', 'PubMed: intravenous NAD+'),
       pubmed('nicotinamide riboside randomized trial', 'PubMed: NAD+ precursor trials'),
@@ -1501,42 +1535,64 @@ export const COMPOUNDS: Compound[] = [
   {
     id: 'orforglipron',
     name: 'Orforglipron',
-    aliases: ['LY3502970'],
+    aliases: ['Foundayo', 'LY3502970'],
     category: 'metabolic',
     classes: ['glp1-agonist', 'glucose-lowering'],
     summary:
-      'An oral, once-daily small-molecule (non-peptide) GLP-1 receptor agonist developed for obesity and type 2 diabetes.',
+      'An oral, once-daily small-molecule (non-peptide) GLP-1 receptor agonist approved in the US for weight management and studied in type 2 diabetes.',
     mechanism:
       'Orforglipron is a non-peptide molecule that activates the GLP-1 receptor, producing effects similar to injectable GLP-1 drugs: reduced appetite, slower gastric emptying and glucose-dependent insulin release. Because it is not a peptide, it is absorbed from the gut without the strict fasting requirements of oral semaglutide.',
     regulatory: {
-      status: 'investigational',
+      status: 'approved',
       detail:
-        'Phase 3 trials (ACHIEVE in type 2 diabetes, ATTAIN in obesity) reported results in 2025, and Eli Lilly sought regulatory approval. Status may have changed recently; check current status.',
+        'FDA-approved in April 2026 as Foundayo (Eli Lilly) for chronic weight management in adults with obesity, or with overweight and at least one weight-related condition; type 2 diabetes is not an approved US indication on the current label. Authorised in the UK (August 2026) for weight management and type 2 diabetes. EMA’s CHMP recommended approval in October 2026; check whether the European Commission has since granted it.',
     },
     evidence: 'extensive',
     evidenceNote:
-      'Several large phase 3 randomised trials in obesity and type 2 diabetes have been reported. Mean weight loss in obesity (around 12% at the highest dose over 72 weeks) was smaller than reported for injectable semaglutide or tirzepatide in separate trials; long-term outcome data are pending.',
+      'Several large phase 3 randomised trials in obesity (ATTAIN) and type 2 diabetes (ACHIEVE) have been reported. In ATTAIN-1, mean weight loss at the highest dose was about 11% over 72 weeks versus about 2% with placebo, smaller than reported for injectable semaglutide or tirzepatide in separate trials; long-term outcome data are still limited.',
     routes: ['oral'],
+    pk: {
+      halfLifeHours: 39,
+      tmaxHours: 6,
+      route: 'oral',
+      note: 'Elimination half-life approx. 29–49 hours (39 h used for the curve); peak concentration 4–8 hours after a dose (6 h used for the curve).',
+      source: 'Foundayo US prescribing information',
+    },
     studiedRegimens: [
+      {
+        context: 'Chronic weight management (Foundayo, adults)',
+        regimen:
+          '0.8 mg orally once daily for at least 30 days, then 2.5 mg and then 5.5 mg, each for at least 30 days; may increase stepwise to 9 mg, 14.5 mg or 17.2 mg once daily based on response and tolerability. Maximum 17.2 mg daily (9 mg with a strong CYP3A4 inhibitor). Take with or without food.',
+        source: 'Foundayo US prescribing information',
+      },
       {
         context: 'Obesity without diabetes (ATTAIN-1, phase 3)',
         regimen:
-          'Once-daily oral dose, started low and escalated every 4 weeks to maintenance doses of 6, 12 or 36 mg; 72 weeks.',
+          'Once-daily oral dose, started low and escalated every 4 weeks to maintenance doses of 6, 12 or 36 mg (an investigational formulation; the label presents these as 5.5, 9 and 17.2 mg); 72 weeks.',
         source: 'ATTAIN-1 phase 3 trial (NEJM 2025)',
       },
     ],
-    commonSideEffects: ['Nausea', 'Constipation', 'Diarrhoea', 'Vomiting', 'Indigestion'],
+    commonSideEffects: ['Nausea', 'Constipation', 'Diarrhoea', 'Vomiting', 'Indigestion', 'Abdominal pain'],
     seriousRisks: [
-      'GLP-1 class risks (pancreatitis, gallbladder disease)',
-      'Dehydration from GI side effects',
-      NOT_ESTABLISHED,
+      'Thyroid C-cell tumour risk (boxed warning)',
+      'Acute pancreatitis',
+      'Gallbladder disease',
+      'Acute kidney injury from dehydration',
+      'Hypoglycaemia with insulin or sulfonylureas',
+      'Aspiration risk under anaesthesia or sedation',
     ],
     cautions: [
-      'Pregnancy and breastfeeding',
-      'Personal or family history of MTC/MEN 2',
+      'Personal or family history of MTC',
+      'Multiple endocrine neoplasia type 2',
+      'Pregnancy or planning pregnancy',
+      'Oral contraceptives (use a backup method)',
+      'Strong CYP3A4 inhibitors or inducers',
       'History of pancreatitis',
+      'Severe gastroparesis',
     ],
+    storage: 'Store at room temperature (20–25 °C).',
     sources: [
+      dailymed('Foundayo', 'DailyMed: Foundayo label'),
       pubmed('orforglipron', 'PubMed: orforglipron'),
       trials('orforglipron', 'ClinicalTrials.gov: orforglipron'),
     ],
@@ -1563,7 +1619,7 @@ export const COMPOUNDS: Compound[] = [
     pk: {
       halfLifeHours: 0.05,
       route: 'iv',
-      note: 'Plasma half-life approx. 1–6 minutes.',
+      note: 'Plasma half-life approx. 1–6 minutes (3 minutes used for the curve).',
       source: 'Pitocin US prescribing information',
     },
     studiedRegimens: [
@@ -1617,11 +1673,11 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'investigational',
       detail:
-        'Not approved by FDA or EMA. In phase 3 development by Eli Lilly (TRIUMPH programme) for obesity and related conditions. Check current status. Products sold online as "research" retatrutide are unapproved and of unverified identity.',
+        'Not approved by FDA or EMA. In phase 3 development by Eli Lilly (TRIUMPH and TRANSCEND programmes) for obesity, type 2 diabetes and related conditions; the first phase 3 results were reported in 2026. Check current status. Products sold online as "research" retatrutide are unapproved and of unverified identity.',
     },
-    evidence: 'moderate',
+    evidence: 'extensive',
     evidenceNote:
-      'Published phase 2 trials in obesity and type 2 diabetes showed large, dose-dependent weight loss (mean 24.2% at 48 weeks with 12 mg in the obesity trial). Phase 3 trials are ongoing or recently reported, and long-term safety is not established.',
+      'Phase 2 trials in obesity and type 2 diabetes showed large, dose-dependent weight loss (mean 24.2% at 48 weeks with 12 mg in the obesity trial). In the phase 3 TRIUMPH-1 trial, mean weight loss at 80 weeks was 25.0% with 12 mg versus 3.9% with placebo. Long-term safety is not established.',
     routes: ['subq'],
     pk: {
       halfLifeHours: 144,
@@ -1635,6 +1691,11 @@ export const COMPOUNDS: Compound[] = [
         regimen:
           'Once-weekly SC doses of 1, 4, 8 or 12 mg for 48 weeks; higher-dose arms started at 2 or 4 mg and were escalated (the 12 mg arm started at 2 mg).',
         source: 'Phase 2 obesity trial (Jastreboff et al., NEJM 2023)',
+      },
+      {
+        context: 'Obesity without diabetes (TRIUMPH-1, phase 3)',
+        regimen: 'Once-weekly SC maintenance doses of 4, 9 or 12 mg for 80 weeks, compared with placebo.',
+        source: 'TRIUMPH-1 phase 3 trial (NEJM 2026)',
       },
     ],
     commonSideEffects: ['Nausea', 'Diarrhoea', 'Vomiting', 'Constipation', 'Increased heart rate'],
@@ -1668,7 +1729,7 @@ export const COMPOUNDS: Compound[] = [
       'Selank is the tetrapeptide tuftsin (Thr-Lys-Pro-Arg) extended with Pro-Gly-Pro for stability. Russian studies report anti-anxiety effects with possible modulation of GABA-A receptor signalling, monoamines and enkephalin-degrading enzymes, as well as immune effects. These mechanisms are not well characterised outside that research base.',
     regulatory: {
       status: 'unapproved',
-      detail: `Registered as a medicine in Russia; not approved by FDA or EMA. Sold elsewhere as a research chemical. ${FDA_COMPOUNDING_FLAG}`,
+      detail: `Registered as a medicine in Russia; not approved by FDA or EMA. Sold elsewhere as a research chemical. ${FDA_CAT2_WITHDRAWN}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -1697,7 +1758,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'approved',
       detail:
-        'FDA- and EMA-approved as Ozempic (weekly injection) and Rybelsus (daily tablet) for type 2 diabetes, and as Wegovy for chronic weight management and cardiovascular risk reduction in adults with established cardiovascular disease and obesity or overweight.',
+        'FDA- and EMA-approved as Ozempic (weekly injection) and Rybelsus (daily tablet) for type 2 diabetes, and as Wegovy (weekly injection) for chronic weight management and cardiovascular risk reduction in adults with established cardiovascular disease and obesity or overweight. In the US, Wegovy injection is also approved for MASH with moderate-to-advanced liver fibrosis (accelerated approval), a daily Wegovy tablet is approved for weight management and cardiovascular risk reduction, and a reformulated diabetes tablet is sold as Ozempic tablets.',
     },
     evidence: 'extensive',
     evidenceNote:
@@ -1714,7 +1775,13 @@ export const COMPOUNDS: Compound[] = [
       {
         context: 'Chronic weight management (Wegovy, adults)',
         regimen:
-          '0.25 mg SC once weekly for weeks 1–4, then 0.5 mg (weeks 5–8), 1 mg (weeks 9–12), 1.7 mg (weeks 13–16), then 2.4 mg once weekly as maintenance. The label gives options if 2.4 mg is not tolerated.',
+          '0.25 mg SC once weekly for weeks 1–4, then 0.5 mg (weeks 5–8), 1 mg (weeks 9–12), 1.7 mg (weeks 13–16); maintenance from week 17 is 2.4 mg (recommended) or 1.7 mg once weekly. If 2.4 mg has been tolerated for at least 4 weeks and more weight reduction is needed, the dose may be raised to a maximum of 7.2 mg once weekly.',
+        source: 'Wegovy US prescribing information',
+      },
+      {
+        context: 'Chronic weight management (Wegovy tablets, adults)',
+        regimen:
+          '1.5 mg once daily for days 1–30, then 4 mg (days 31–60), 9 mg (days 61–90), then 25 mg once daily as maintenance. Take on an empty stomach in the morning with up to 120 mL of plain water, at least 30 minutes before food, drink or other oral medicines.',
         source: 'Wegovy US prescribing information',
       },
       {
@@ -1726,8 +1793,8 @@ export const COMPOUNDS: Compound[] = [
       {
         context: 'Type 2 diabetes (Rybelsus tablets)',
         regimen:
-          '3 mg once daily for 30 days, then 7 mg daily; may increase to 14 mg after at least 30 days. Take on an empty stomach with up to 120 mL of plain water, at least 30 minutes before food, drink or other oral medicines. Strengths shown are the original tablet strengths; a reformulated tablet with different strengths exists in some markets, so check the current label.',
-        source: 'Rybelsus US prescribing information',
+          '3 mg once daily for 30 days, then 7 mg daily; may increase to 14 mg from day 61 if more glucose control is needed. Take on an empty stomach with up to 120 mL of plain water, at least 30 minutes before food, drink or other oral medicines. The reformulated US Ozempic tablets use different strengths (1.5 mg for 30 days, then 4 mg, then 9 mg if needed) and are not interchangeable mg for mg.',
+        source: 'Rybelsus and Ozempic tablets US prescribing information',
       },
     ],
     commonSideEffects: [
@@ -1754,7 +1821,7 @@ export const COMPOUNDS: Compound[] = [
       'Upcoming surgery or sedation (aspiration risk)',
     ],
     storage:
-      'Pens: refrigerate at 2–8 °C before first use; do not freeze; protect from light. Room-temperature and in-use limits differ by product (e.g. Ozempic up to 56 days after first use), so follow the product label. Tablets: room temperature in the original blister pack.',
+      'Pens: refrigerate at 2–8 °C before first use; do not freeze; protect from light. Room-temperature and in-use limits differ by product (e.g. Ozempic up to 56 days after first use), so follow the product label. Tablets: room temperature, in the original container to protect from moisture.',
     sources: [
       dailymed('Wegovy', 'DailyMed: Wegovy label'),
       dailymed('Ozempic', 'DailyMed: Ozempic label'),
@@ -1774,7 +1841,7 @@ export const COMPOUNDS: Compound[] = [
       'Semax combines the ACTH(4–7) fragment with a stabilising Pro-Gly-Pro tail. It has no meaningful hormonal (cortisol-releasing) activity. Russian laboratory studies report increased brain-derived neurotrophic factor (BDNF) expression and effects on monoamine signalling, but its mechanisms in humans are not well established.',
     regulatory: {
       status: 'unapproved',
-      detail: `Registered as a medicine in Russia and some neighbouring countries; not approved by FDA or EMA. Sold elsewhere as a research chemical. ${FDA_COMPOUNDING_FLAG}`,
+      detail: `Registered as a medicine in Russia and some neighbouring countries; not approved by FDA or EMA. Sold elsewhere as a research chemical. ${FDA_CAT2_WITHDRAWN} ${PCAC_2026_FOR}`,
     },
     evidence: 'limited',
     evidenceNote:
@@ -1803,7 +1870,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'unapproved',
       detail:
-        'Previously FDA-approved (Geref) for diagnosing and treating growth hormone deficiency in children; discontinued in 2008, not for safety reasons. No approved product is currently marketed; it is supplied through compounding in some countries and as a research chemical.',
+        'Previously FDA-approved (Geref) for diagnosing and treating growth hormone deficiency in children; discontinued in 2008, and FDA later determined it was not withdrawn for reasons of safety or effectiveness. No approved product is currently marketed; it is supplied through compounding in some countries and as a research chemical.',
     },
     evidence: 'limited',
     evidenceNote:
@@ -1838,29 +1905,30 @@ export const COMPOUNDS: Compound[] = [
     category: 'metabolic',
     classes: ['melanocortin-agonist'],
     summary:
-      'A daily MC4R agonist injection approved for obesity caused by specific rare genetic disorders.',
+      'A daily MC4R agonist injection approved for obesity caused by specific rare genetic disorders or by hypothalamic damage.',
     mechanism:
       'Setmelanotide is a cyclic peptide agonist of the melanocortin-4 receptor (MC4R), a key part of the brain’s leptin–melanocortin pathway that regulates hunger and energy use. In rare genetic disorders where signalling upstream of MC4R is broken (POMC, PCSK1 or LEPR deficiency, Bardet–Biedl syndrome), it restores pathway activity and reduces hunger and weight. Some activity at MC1R causes skin darkening.',
     regulatory: {
       status: 'approved',
       detail:
-        'FDA- and EMA-approved as Imcivree for chronic weight management in obesity due to genetically confirmed POMC, PCSK1 or LEPR deficiency, or Bardet–Biedl syndrome. Not approved for common obesity.',
+        'FDA- and EMA-approved as Imcivree for chronic weight management in obesity due to genetically confirmed POMC, PCSK1 or LEPR deficiency, or Bardet–Biedl syndrome. In the US it is also approved for acquired hypothalamic obesity (age 4 and over). Not approved for common obesity.',
     },
     evidence: 'moderate',
     evidenceNote:
-      'Approval was based on small, open-label phase 3 trials in rare genetic forms of obesity; it has not been shown to be useful in common obesity.',
+      'Approval was based on small phase 3 trials in rare forms of obesity (open-label for POMC, PCSK1 and LEPR deficiency; with placebo-controlled periods for Bardet–Biedl syndrome and hypothalamic obesity); it has not been shown to be useful in common obesity.',
     routes: ['subq'],
     pk: {
       halfLifeHours: 11,
+      tmaxHours: 8,
       route: 'subq',
-      note: 'Effective half-life approx. 11 hours, supporting once-daily dosing.',
+      note: 'Effective half-life approx. 11 hours, supporting once-daily dosing; median time to peak about 8 hours.',
       source: 'Imcivree US prescribing information',
     },
     studiedRegimens: [
       {
-        context: 'Approved genetic obesity indications (adults and children 12 and over)',
+        context: 'Bardet–Biedl syndrome or POMC, PCSK1 or LEPR deficiency (adults and children 12 and over)',
         regimen:
-          '2 mg SC once daily for 2 weeks, then 3 mg once daily if tolerated. Different starting doses apply to younger children; see label.',
+          '2 mg SC once daily for 2 weeks, then 3 mg once daily if tolerated. Lower starting doses apply to younger children and to acquired hypothalamic obesity (0.5 mg); see label.',
         source: 'Imcivree US prescribing information',
       },
     ],
@@ -1875,10 +1943,12 @@ export const COMPOUNDS: Compound[] = [
     seriousRisks: [
       'Depression and suicidal thoughts',
       'Prolonged erections or other sexual effects',
+      'Serious hypersensitivity reactions (anaphylaxis)',
       'Darkening of moles; skin checks advised',
+      'Adrenal insufficiency or sodium imbalance (hypothalamic obesity)',
     ],
     cautions: [
-      'Not for common (non-genetic) obesity',
+      'Not for common obesity',
       'History of depression',
       'Pregnancy',
       'History of melanoma or atypical moles',
@@ -1978,11 +2048,11 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'investigational',
       detail:
-        'Not approved by FDA or EMA. In phase 3 development by Boehringer Ingelheim (with Zealand Pharma) for obesity and MASH. Check current status.',
+        'Not approved by FDA or EMA. In phase 3 development by Boehringer Ingelheim (with Zealand Pharma) for obesity and MASH; the first phase 3 obesity results (SYNCHRONIZE) were reported in 2026. Check current status.',
     },
-    evidence: 'moderate',
+    evidence: 'extensive',
     evidenceNote:
-      'Phase 2 trials in obesity and in MASH with liver fibrosis reported substantial weight loss and liver improvements; phase 3 results and long-term safety data are pending.',
+      'Phase 2 trials in obesity and in MASH with liver fibrosis reported substantial weight loss and liver improvements. In the phase 3 SYNCHRONIZE-1 trial in adults without diabetes, mean weight loss at 76 weeks was 12–13% versus 5.4% with placebo; long-term safety data are still limited.',
     routes: ['subq'],
     studiedRegimens: [
       {
@@ -1990,6 +2060,11 @@ export const COMPOUNDS: Compound[] = [
         regimen:
           'Once-weekly SC doses of 0.6, 2.4, 3.6 or 4.8 mg; 20 weeks of dose escalation followed by 26 weeks of maintenance.',
         source: 'Phase 2 obesity trial (le Roux et al., Lancet Diabetes & Endocrinology 2024)',
+      },
+      {
+        context: 'Obesity without diabetes (SYNCHRONIZE-1, phase 3)',
+        regimen: 'Once-weekly SC doses escalated to maintenance doses of up to 3.6 mg or 6.0 mg; 76 weeks.',
+        source: 'SYNCHRONIZE-1 phase 3 trial (NEJM 2026)',
       },
     ],
     commonSideEffects: ['Nausea', 'Vomiting', 'Diarrhoea', 'Constipation', 'Increased heart rate'],
@@ -2013,7 +2088,7 @@ export const COMPOUNDS: Compound[] = [
   {
     id: 'tesamorelin',
     name: 'Tesamorelin',
-    aliases: ['Egrifta', 'Egrifta SV', 'TH9507'],
+    aliases: ['Egrifta', 'Egrifta SV', 'Egrifta WR', 'TH9507'],
     category: 'gh-axis',
     classes: ['ghrh-analog'],
     summary:
@@ -2023,23 +2098,29 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'approved',
       detail:
-        'FDA-approved (Egrifta SV) to reduce excess abdominal fat in adults with HIV and lipodystrophy. Not authorised in the EU.',
+        'FDA-approved as Egrifta SV and Egrifta WR (two formulations with different doses that are not interchangeable) to reduce excess abdominal fat in adults with HIV and lipodystrophy. Not authorised in the EU; an EU marketing application was withdrawn in 2012.',
     },
     evidence: 'extensive',
     evidenceNote:
       'Two phase 3 randomised trials in about 800 adults with HIV-associated abdominal fat showed reduced visceral fat; the effect reverses after stopping, and evidence for other uses is limited.',
     routes: ['subq'],
     pk: {
-      halfLifeHours: 0.43,
+      halfLifeHours: 0.13,
+      tmaxHours: 0.15,
       route: 'subq',
-      note: 'Mean half-life approx. 26 minutes in healthy adults and 38 minutes in people with HIV.',
-      source: 'Egrifta US prescribing information',
+      note: 'Mean elimination half-life approx. 8 minutes in healthy adults after a 1.4 mg dose; median time to peak about 9 minutes.',
+      source: 'Egrifta SV US prescribing information',
     },
     studiedRegimens: [
       {
-        context: 'Excess abdominal fat in adults with HIV lipodystrophy',
-        regimen: '2 mg SC once daily into the abdomen.',
+        context: 'Excess abdominal fat in adults with HIV lipodystrophy (Egrifta SV)',
+        regimen: '1.4 mg SC once daily into the abdomen, given immediately after mixing.',
         source: 'Egrifta SV US prescribing information',
+      },
+      {
+        context: 'Excess abdominal fat in adults with HIV lipodystrophy (Egrifta WR)',
+        regimen: '1.28 mg SC once daily into the abdomen, from a vial that is discarded 7 days after mixing.',
+        source: 'Egrifta WR US prescribing information',
       },
     ],
     commonSideEffects: [
@@ -2063,7 +2144,8 @@ export const COMPOUNDS: Compound[] = [
       'Diabetes (monitor glucose)',
       'Competitive athletes (prohibited)',
     ],
-    storage: 'Egrifta SV: store at room temperature (20–25 °C), protect from light; mix just before use.',
+    storage:
+      'Store vials at room temperature (20–25 °C) in the original box to protect from light. Egrifta SV: use immediately after mixing. Egrifta WR: keep the mixed solution at room temperature and discard 7 days after mixing.',
     antiDoping: WADA_S2,
     sources: [
       dailymed('Egrifta', 'DailyMed: Egrifta label'),
@@ -2088,7 +2170,7 @@ export const COMPOUNDS: Compound[] = [
     },
     evidence: 'moderate',
     evidenceNote:
-      'A published phase 2 randomised trial showed dose-dependent weight loss over 24 weeks (about 10% at 1 mg versus 2% with placebo), with further trials in Mexico; heart rate increases were seen.',
+      'A published phase 2 randomised trial showed dose-dependent weight loss over 24 weeks (about 10% at 1 mg versus 2% with placebo), with further trials in Mexico; heart rate increases were seen. The journal later published an expression of concern about under-reporting of adverse effects in that trial.',
     routes: ['oral'],
     studiedRegimens: [
       {
@@ -2220,7 +2302,7 @@ export const COMPOUNDS: Compound[] = [
       'Testicular shrinkage',
     ],
     seriousRisks: [
-      'Blood pressure increases (boxed warning, Xyosted)',
+      'Blood pressure increases',
       'Erythrocytosis (raised haematocrit)',
       'Venous blood clots',
       'Suppressed sperm production and fertility',
@@ -2248,23 +2330,23 @@ export const COMPOUNDS: Compound[] = [
     category: 'immune',
     classes: ['thymic-peptide'],
     summary:
-      'A 28-amino-acid thymic peptide that modulates T-cell function, approved in some countries outside the US and EU for hepatitis B.',
+      'A 28-amino-acid thymic peptide that modulates T-cell function, approved in some countries (but not by FDA or EMA) for hepatitis B.',
     mechanism:
       'Thymosin alpha-1 was originally isolated from thymus tissue. It acts on immune cells, partly through Toll-like receptors on dendritic cells, to promote T-cell maturation and shift immune responses, including increased interferon and interleukin-2 production. It is described as an immune modulator rather than a simple stimulant.',
     regulatory: {
       status: 'investigational',
       detail:
-        'Approved as thymalfasin (Zadaxin) in a number of countries outside the US and EU, mainly for chronic hepatitis B and as an immune adjunct; not approved by FDA or EMA. Studied in trials for sepsis, cancer and infections. Research-chemical products are unapproved.',
+        `Approved as thymalfasin (Zadaxin) in a number of countries, including China, mainly for chronic hepatitis B and as an immune adjunct; not approved by FDA and not centrally authorised by EMA. Studied in trials for sepsis, cancer and infections. Research-chemical products are unapproved. ${FDA_CAT2_WITHDRAWN}`,
     },
     evidence: 'moderate',
     evidenceNote:
-      'Many clinical trials exist, mostly in hepatitis B, sepsis and as an adjunct in cancer; results are mixed, many trials are small or open-label, and a large sepsis trial did not show a mortality benefit.',
+      'Many clinical trials exist, mostly in hepatitis B, sepsis and as an adjunct in cancer; results are mixed, many trials are small or open-label, and a large phase 3 sepsis trial (TESTS, about 1,100 patients) did not show a reduction in 28-day mortality.',
     routes: ['subq'],
     studiedRegimens: [
       {
         context: 'Chronic hepatitis B (where approved)',
         regimen: '1.6 mg SC twice weekly for 6 months.',
-        source: 'Zadaxin product labelling (approved outside the US and EU)',
+        source: 'Zadaxin product labelling (where approved)',
       },
     ],
     commonSideEffects: ['Injection-site discomfort or redness', 'Few adverse effects in trials'],
@@ -2298,7 +2380,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'investigational',
       detail:
-        'Full-length thymosin beta-4 has been tested in clinical trials (for example as eye drops for dry eye and neurotrophic keratopathy, and as a topical wound gel) but is not approved; check current status. TB-500 is not approved for human use and is sold as a research chemical. FDA has listed TB-500 and a thymosin beta-4 fragment among bulk substances that may present significant safety risks in compounding.',
+        'Full-length thymosin beta-4 has been tested in clinical trials (for example as eye drops for dry eye and neurotrophic keratopathy, and as a topical wound gel) but is not approved; check current status. TB-500 is not approved for human use and is sold as a research chemical. For compounding, FDA previously placed the thymosin beta-4 fragment LKKTETQ (TB-500) in Category 2 (bulk substances that may present significant safety risks); the nomination was later withdrawn, so it is no longer on that list, and it is not on FDA’s 503A bulks list. In July 2026 FDA’s Pharmacy Compounding Advisory Committee voted to recommend adding it to the 503A bulks list; the vote is not binding, and adding it would require FDA rulemaking.',
     },
     evidence: 'limited',
     evidenceNote:
@@ -2333,7 +2415,7 @@ export const COMPOUNDS: Compound[] = [
     regulatory: {
       status: 'approved',
       detail:
-        'FDA-approved as Mounjaro (type 2 diabetes) and Zepbound (chronic weight management; moderate-to-severe obstructive sleep apnoea in adults with obesity). EMA-approved as Mounjaro for type 2 diabetes and weight management.',
+        'FDA-approved as Mounjaro (type 2 diabetes in adults and children aged 10 and over; cardiovascular risk reduction in adults with type 2 diabetes at high cardiovascular risk) and Zepbound (chronic weight management; moderate-to-severe obstructive sleep apnoea in adults with obesity). EMA-approved as Mounjaro for type 2 diabetes and weight management.',
     },
     evidence: 'extensive',
     evidenceNote:
@@ -2343,14 +2425,14 @@ export const COMPOUNDS: Compound[] = [
       halfLifeHours: 120,
       tmaxHours: 24,
       route: 'subq',
-      note: 'Half-life approx. 5 days; peak concentration 8–72 hours after injection (24 h used for the curve).',
+      note: 'Half-life approx. 5 days; median time to peak 24 hours (range 8–72 hours) after injection.',
       source: 'Zepbound US prescribing information',
     },
     studiedRegimens: [
       {
         context: 'Chronic weight management (Zepbound) and type 2 diabetes (Mounjaro)',
         regimen:
-          '2.5 mg SC once weekly for 4 weeks, then 5 mg; increase in 2.5 mg steps after at least 4 weeks on each dose. Maintenance 5, 10 or 15 mg weekly (10 or 15 mg for sleep apnoea); maximum 15 mg weekly.',
+          '2.5 mg SC once weekly for 4 weeks, then 5 mg; increase in 2.5 mg steps after at least 4 weeks on each dose. Maintenance 5, 10 or 15 mg weekly (10 or 15 mg for sleep apnoea); maximum 15 mg weekly in adults (10 mg for children on Mounjaro).',
         source: 'Zepbound and Mounjaro US prescribing information',
       },
     ],
@@ -2379,7 +2461,7 @@ export const COMPOUNDS: Compound[] = [
       'History of pancreatitis',
     ],
     storage:
-      'Refrigerate at 2–8 °C; do not freeze; protect from light. If needed, may be kept unrefrigerated up to 30 °C for up to 21 days.',
+      'Refrigerate at 2–8 °C; do not freeze; protect from light. If needed, single-dose pens and vials may be kept unrefrigerated up to 30 °C for up to 21 days; multi-dose KwikPens and vials have a 30-day limit, so follow the product label.',
     sources: [
       dailymed('Zepbound', 'DailyMed: Zepbound label'),
       dailymed('Mounjaro', 'DailyMed: Mounjaro label'),

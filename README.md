@@ -2,6 +2,8 @@
 
 Research on PepPedia, and **Titra**: our own evidence-first peptide reference and private protocol tracker, built from that research.
 
+![Titra screens](docs/screenshots/titra-overview.png)
+
 | Path | What it is |
 |---|---|
 | [`mobile/`](mobile/) | The Titra app (Expo SDK 58, React Native, TypeScript). iOS, Android and web. |
