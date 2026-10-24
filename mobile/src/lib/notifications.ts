@@ -9,10 +9,9 @@ import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { ROUTE_SHORT } from '@/data/library';
-import type { DoseLog, Protocol } from '@/domain/model';
-import { agendaForDay, doseOn, occurrences } from '@/domain/schedule';
-import { formatAmount } from '@/domain/units';
+import { reminderBody } from '@/domain/draw';
+import type { DoseLog, InventoryItem, Protocol, SyringeId } from '@/domain/model';
+import { agendaForDay, occurrences } from '@/domain/schedule';
 
 const CHANNEL = 'doses';
 const HORIZON_DAYS = 7;
@@ -48,7 +47,7 @@ export async function requestReminderPermission(): Promise<boolean> {
   return asked.granted;
 }
 
-export async function syncReminders(protocols: Protocol[], logs: DoseLog[], enabled: boolean): Promise<number> {
+export async function syncReminders(protocols: Protocol[], logs: DoseLog[], enabled: boolean, inventory: InventoryItem[] = [], defaultSyringe: SyringeId = 'u100-100'): Promise<number> {
   if (!remindersSupported) return 0;
   await configureNotifications();
   await Notifications.cancelAllScheduledNotificationsAsync();
@@ -78,7 +77,7 @@ export async function syncReminders(protocols: Protocol[], logs: DoseLog[], enab
     await Notifications.scheduleNotificationAsync({
       content: {
         title: `${p.name} due`,
-        body: `${formatAmount(doseOn(p, at), true)} · ${ROUTE_SHORT[p.route]}. Tap to log it.`,
+        body: reminderBody(p, at, inventory, defaultSyringe),
         data: { protocolId: p.id, scheduledFor: at.toISOString() },
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL },
@@ -87,3 +86,4 @@ export async function syncReminders(protocols: Protocol[], logs: DoseLog[], enab
   }
   return count;
 }
+

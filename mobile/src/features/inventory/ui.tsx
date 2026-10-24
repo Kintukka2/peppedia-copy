@@ -3,12 +3,16 @@ import { FlaskConical, Minus, Pill, Plus } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
-import type { AmountUnit, InventoryForm } from '@/domain/model';
+import type { AmountUnit, InventoryForm, SyringeId } from '@/domain/model';
+import { SYRINGES, trim, UNITS_PER_ML } from '@/domain/units';
 import { Button, Chip, num, NumberField } from '@/ui/controls';
-import { IconButton } from '@/ui/layout';
+import { Gap, HStack, IconButton } from '@/ui/layout';
 import { UnitPicker } from '@/ui/pickers';
+import { SyringeGauge } from '@/ui/syringe';
 import { T } from '@/ui/text';
 import { radius, space, useTheme } from '@/ui/theme';
+
+import { SYRINGE_SHORT, unitsText } from './format';
 
 export function Thumb({ uri, form, size = 44 }: { uri?: string; form: InventoryForm; size?: number }) {
   const { c } = useTheme();
@@ -117,5 +121,41 @@ export function InlineConfirm({ message, confirm, onConfirm, onCancel, danger = 
         <Button title="Cancel" kind="ghost" small onPress={onCancel} />
       </View>
     </View>
+  );
+}
+
+/** Headline draw in the syringe's own scale, the other scale beside it, and the filled barrel. */
+export function DrawReadout({ volumeMl, syringe, active = true }: { volumeMl: number; syringe: SyringeId; active?: boolean }) {
+  const spec = SYRINGES[syringe];
+  const units = volumeMl * UNITS_PER_ML;
+  const byUnits = spec.scale === 'units';
+  return (
+    <View style={{ marginTop: space.lg }}>
+      <HStack gap={6} wrap style={{ alignItems: 'baseline' }}>
+        <T tone="soft">Draw</T>
+        <T variant="title" tabular>
+          {byUnits ? unitsText(units) : `${trim(volumeMl, 2)} mL`}
+        </T>
+        <T tone="soft" tabular>
+          {byUnits ? `${trim(volumeMl, 3)} mL` : `${unitsText(units)} on a U-100 scale`}
+        </T>
+      </HStack>
+      <Gap size={space.sm} />
+      {/* Hidden panels skip the gauge: it measures 0 wide under display:none. */}
+      {active ? <SyringeGauge volumeMl={volumeMl} syringe={syringe} /> : null}
+      <T variant="small" tone="faint">
+        {spec.label}
+      </T>
+    </View>
+  );
+}
+
+export function SyringeChips({ value, onChange }: { value: SyringeId; onChange: (s: SyringeId) => void }) {
+  return (
+    <HStack wrap>
+      {(Object.keys(SYRINGES) as SyringeId[]).map((id) => (
+        <Chip key={id} label={SYRINGE_SHORT[id]} selected={value === id} onPress={() => onChange(id)} />
+      ))}
+    </HStack>
   );
 }

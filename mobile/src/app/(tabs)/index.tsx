@@ -7,7 +7,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { COMPOUNDS, getCompound } from '@/data/library';
 import { buildInsights } from '@/domain/insights';
 import { checkStack, LEVEL_LABEL } from '@/domain/interactions';
-import { alerts, ALERT_LABEL, drawFor, forecast } from '@/domain/inventory';
+import { drawForProtocol, drawText } from '@/domain/draw';
+import { alerts, ALERT_LABEL, forecast } from '@/domain/inventory';
 import { adherence, agendaForDay, dayKey, slotsOnDay, type AgendaItem } from '@/domain/schedule';
 import { formatAmount, fromKg, trim } from '@/domain/units';
 import { hasActivity, lastDays, STEP_GOAL, todayTotal } from '@/features/health/activity';
@@ -175,8 +176,7 @@ export default function TodayScreen() {
           ) : (
             <Card style={{ paddingVertical: space.xs }}>
               {agenda.map((item, i) => {
-                const inv = item.protocol.inventoryId ? inventory.find((x) => x.id === item.protocol.inventoryId) : undefined;
-                const draw = inv ? drawFor(inv, item.dose) : null;
+                const draw = drawForProtocol(item.protocol, item.dose, inventory, settings.syringe);
                 const done = item.log && !item.log.skipped;
                 const skipped = item.log?.skipped;
                 const overdue = !item.log && item.at < now;
@@ -192,7 +192,7 @@ export default function TodayScreen() {
                       </HStack>
                       <T variant="small" tone="soft">
                         {format(item.at, 'HH:mm')} · {formatAmount(item.dose, true)}
-                        {draw ? ` · ${trim(draw.units, 1)} units (${trim(draw.volumeMl, 3)} mL)` : ''}
+                        {draw ? ` · ${drawText(draw)}` : ''}
                       </T>
                     </View>
                     {done ? (

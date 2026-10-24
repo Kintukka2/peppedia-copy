@@ -4,10 +4,11 @@
 import { addDays, addWeeks } from 'date-fns';
 
 import { getCompound } from '@/data/library';
+import { templatesFor } from '@/data/protocols';
 import type { ProtocolTemplate, TemplateComponent } from '@/data/types';
-import type { Protocol, Schedule } from '@/domain/model';
+import type { Amount, Protocol, ProtocolMix, Schedule } from '@/domain/model';
 import { dayKey, describeScheduleOf, parseDay } from '@/domain/schedule';
-import { formatAmount, trim } from '@/domain/units';
+import { formatAmount, toBase, trim } from '@/domain/units';
 
 export function doseLine(c: TemplateComponent): string {
   const base = formatAmount(c.dose);
@@ -93,4 +94,49 @@ export function templateToProtocols(t: ProtocolTemplate, o: ToProtocolsOptions):
     });
   }
   return out;
+}
+
+/** Smallest and largest single dose of a compound across the library's templates, in mg or IU. */
+export function typicalDoseRange(compoundId: string): { min: number; max: number; unit: 'mg' | 'iu' } | null {
+  const seen: Record<'mg' | 'iu', number[]> = { mg: [], iu: [] };
+  for (const t of templatesFor(compoundId)) {
+    t.components.forEach((c, i) => {
+      if (c.compoundId !== compoundId) return;
+      const doses: Amount[] = [c.dose];
+      if (c.range) doses.push({ value: c.range.min, unit: c.dose.unit }, { value: c.range.max, unit: c.dose.unit });
+      if (i === 0 && t.titration) doses.push(...t.titration.map((s) => s.dose));
+      for (const d of doses) {
+        const b = toBase(d);
+        if (b.value > 0) seen[b.unit].push(b.value);
+      }
+    });
+  }
+  const unit = seen.mg.length >= seen.iu.length ? 'mg' : 'iu';
+  const vals = seen[unit];
+  return vals.length ? { min: Math.min(...vals), max: Math.max(...vals), unit } : null;
+}
+
+/**
+ * Flags a dose more than ten times outside every library protocol for the
+ * compound, which is almost always a mcg/mg slip rather than a choice.
+ */
+export function doseScaleWarning(compoundId: string | null, name: string, dose: Amount): string | null {
+  if (!compoundId || !(dose.value > 0)) return null;
+  const r = typicalDoseRange(compoundId);
+  const d = toBase(dose);
+  if (!r || d.unit !== r.unit) return null;
+  const span = `${formatAmount({ value: r.min, unit: r.unit }, true)}–${formatAmount({ value: r.max, unit: r.unit }, true)}`;
+  if (d.value < r.min / 10) return `${formatAmount(dose, true)} is far below the ${span} that ${name} protocols in the library use. Check mcg vs mg.`;
+  if (d.value > r.max * 10) return `${formatAmount(dose, true)} is far above the ${span} that ${name} protocols in the library use. Check mcg vs mg.`;
+  return null;
+}
+
+/** A premixed blend's vial, as a protocol mix (water still to be entered). */
+export function mixFromTemplate(t: ProtocolTemplate): ProtocolMix | undefined {
+  if (!t.blendVial) return undefined;
+  const order = [...t.blendVial].sort((a, b) => t.components.findIndex((c) => c.compoundId === a.compoundId) - t.components.findIndex((c) => c.compoundId === b.compoundId));
+  return {
+    form: 'powder',
+    components: order.map((b) => ({ compoundId: b.compoundId, name: getCompound(b.compoundId)?.name ?? b.compoundId, amount: b.amount })),
+  };
 }

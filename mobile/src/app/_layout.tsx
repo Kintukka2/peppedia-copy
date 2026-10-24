@@ -28,12 +28,14 @@ function useHydrated(): boolean {
 function ReminderSync() {
   const protocols = useStore((s) => s.protocols);
   const logs = useStore((s) => s.logs);
+  const inventory = useStore((s) => s.inventory);
   const enabled = useStore((s) => s.settings.remindersEnabled);
+  const syringe = useStore((s) => s.settings.syringe);
   useEffect(() => {
     if (!remindersSupported) return;
-    const t = setTimeout(() => syncReminders(protocols, logs, enabled).catch(() => {}), 400);
+    const t = setTimeout(() => syncReminders(protocols, logs, enabled, inventory, syringe).catch(() => {}), 400);
     return () => clearTimeout(t);
-  }, [protocols, logs, enabled]);
+  }, [protocols, logs, enabled, inventory, syringe]);
 
   useEffect(() => {
     if (!remindersSupported) return;

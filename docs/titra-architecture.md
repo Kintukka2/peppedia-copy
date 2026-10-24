@@ -32,7 +32,7 @@ Titra is our own take on the PepPedia idea: a peptide reference library, a libra
 | Today | `(tabs)/index` with week mood strip, today's doses (log or skip, draw shown in units/mL), adherence, weight trend, activity (steps ring, 7-day sparkline), levels, stack check, stock alerts, insights, library highlight | `schedule.agendaForDay`, `insights.buildInsights` |
 | Library | `(tabs)/library` (search, category and status filters, bookmarks), `compound/[id]` (status, evidence, mechanism, single-dose PK curve, labelled protocols, studied regimens, risks, storage, checks against your stack, sources) | `data/library.searchCompounds`, `pk` |
 | Protocol library | `templates` (every template, filter by source and by single vs stack/blend), template cards on compound pages and protocol detail | `data/protocols`, `features/protocols/templates` |
-| Protocols | `(tabs)/protocols`, `protocol/form` ("Start from a protocol" prefill, compound picker, route, dose, titration steps, daily / weekdays / every N days / as needed, on-off cycles, dates, vial link, reminders), `protocol/[id]` (titration timeline, adherence, level chart, supply, template it started from) | `schedule`, `templateToProtocols` |
+| Protocols | `(tabs)/protocols`, `protocol/form` ("Start from a protocol" prefill, compound picker, route, dose with a mcg/mg slip check against the library's ranges, titration steps, **vial & syringe calculator** (powder + water or liquid strength, or a linked vial; per-dose draw in units and mL with the syringe gauge, units for every titration step, doses per vial, optional "add to inventory"), schedule, cycles, dates, reminders), `protocol/[id]` (each dose's draw, titration timeline with units, adherence, level chart, supply, template it started from) | `schedule`, `draw.drawForProtocol`, `templateToProtocols` |
 | Logging | `log` (prefilled dose, time, vial deduction, syringe draw, body-map site with rotation suggestion), `history` | `inventory.deduct`, `sites.suggestSite` |
 | Inventory | `inventory/*` (powder, solution, oil, oral; blends with GLOW/KLOW/Wolverine presets; vendor, batch, price, expiry, photos), `supplies` | `inventory.forecast`, `costPerDose`, `alerts` |
 | Calculator | `(tabs)/calculator`: reconstitute (+ solve-for-water, fill from a protocol and its vial), pre-mixed, oil, blend | `calculator` |
@@ -45,6 +45,8 @@ Titra is our own take on the PepPedia idea: a peptide reference library, a libra
 | Data | `settings`, `backups`, `about`, `onboarding` | `store/backup` |
 
 ## Core models
+
+**Dose draw** (`domain/draw.ts`). Every protocol can carry its vial (`mix`: powder amount + water, or a liquid's strength per mL, with blend components) and its syringe. `drawForProtocol` uses the linked inventory vial when it has a concentration, otherwise the protocol's own mix, and returns the volume, U-100 units, what each compound in the vial delivers and doses per vial. Today, the log screen, protocol detail and reminders all show it, e.g. "1 mg · 10 units (0.1 mL)".
 
 **Calculator** (`domain/calculator.ts`). Concentration = amount ÷ diluent mL. Draw mL = dose ÷ concentration. U-100 units = mL × 100. The calculator warns when the draw exceeds the syringe or is under two markings. Solve-for-water inverts the formula: diluent = units × amount ÷ (dose × 100). Blends dose on the first component and deliver the others in proportion.
 

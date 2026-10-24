@@ -7,10 +7,12 @@ import { View } from 'react-native';
 import { getCompound, ROUTE_LABEL } from '@/data/library';
 import { TEMPLATE_BY_ID } from '@/data/protocols';
 import { SITE_BY_ID } from '@/data/sites';
+import { drawForProtocol, drawText } from '@/domain/draw';
 import { forecast } from '@/domain/inventory';
 import { clearsAt, paramsFor, sampleSeries } from '@/domain/pk';
 import { adherence, describeSchedule, doseOn, nextDose, parseDay, titrationStepOn } from '@/domain/schedule';
 import { formatAmount, toBase } from '@/domain/units';
+import { DrawReadout } from '@/features/inventory/ui';
 import { TemplateCard } from '@/features/protocols/components';
 import { whenLabel } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
@@ -30,6 +32,7 @@ export default function ProtocolDetail() {
   const protocols = useStore((s) => s.protocols);
   const logs = useStore((s) => s.logs);
   const inventory = useStore((s) => s.inventory);
+  const defaultSyringe = useStore((s) => s.settings.syringe);
   const now = useNow();
   const p = protocols.find((x) => x.id === id);
   const compound = getCompound(p?.compoundId);
@@ -60,6 +63,7 @@ export default function ProtocolDetail() {
   const inv = p.inventoryId ? inventory.find((i) => i.id === p.inventoryId) : undefined;
   const f = inv ? forecast(inv, protocols.filter((x) => x.inventoryId === inv.id && x.status === 'active'), now) : null;
   const step = titrationStepOn(p, now);
+  const draw = drawForProtocol(p, doseOn(p, now), inventory, defaultSyringe);
   const next = nextDose(p, now);
 
   const startDay = parseDay(p.startDate);
@@ -88,6 +92,30 @@ export default function ProtocolDetail() {
         {ROUTE_LABEL[p.route]} · {describeSchedule(p)}
       </T>
 
+      {draw ? (
+        <Card style={{ marginBottom: space.md }}>
+          <T variant="micro" tone="faint">
+            Each dose
+          </T>
+          <T variant="bodyStrong" style={{ marginTop: 2 }}>
+            {draw.delivers.map((d) => `${formatAmount(d.amount, true)} ${d.name}`).join(' + ')}
+          </T>
+          <DrawReadout volumeMl={draw.volumeMl} syringe={draw.syringe} />
+          {draw.warnings.map((w) => (
+            <View key={w} style={{ marginTop: space.sm }}>
+              <Notice tone="warn">{w}</Notice>
+            </View>
+          ))}
+        </Card>
+      ) : p.route !== 'oral' ? (
+        <Card onPress={() => router.push(`/protocol/form?id=${p.id}`)} style={{ marginBottom: space.md }}>
+          <T variant="bodyStrong">Add the vial to see units per dose</T>
+          <T variant="small" tone="soft">
+            Edit the protocol and describe the vial and syringe; every dose then shows exactly what to draw.
+          </T>
+        </Card>
+      ) : null}
+
       <View style={{ flexDirection: 'row', gap: space.md, marginBottom: space.xxl }}>
         <Card style={{ flex: 1 }}>
           <Stat label="Next dose" value={next ? format(next, 'HH:mm') : '—'} sub={whenLabel(next)} />
@@ -113,7 +141,13 @@ export default function ProtocolDetail() {
                     </T>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <T variant="bodyStrong">{formatAmount(s.dose, true)}</T>
+                    <T variant="bodyStrong">
+                      {formatAmount(s.dose, true)}
+                      {(() => {
+                        const d = drawForProtocol(p, s.dose, inventory, defaultSyringe);
+                        return d ? <T tone="soft"> · {drawText(d)}</T> : null;
+                      })()}
+                    </T>
                     <T variant="small" tone="soft">
                       {format(s.start, 'd MMM')} – {s.i === steps.length - 1 ? 'onward' : format(s.end, 'd MMM')} · {s.weeks} wk
                     </T>

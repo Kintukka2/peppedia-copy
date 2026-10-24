@@ -6,11 +6,13 @@ import { View } from 'react-native';
 import { getCompound, ROUTE_LABEL } from '@/data/library';
 import { SITE_BY_ID, type BodyView } from '@/data/sites';
 import type { Compound, Route } from '@/data/types';
-import { doseInItemUnit, drawFor } from '@/domain/inventory';
+import { drawForProtocol } from '@/domain/draw';
+import { doseInItemUnit } from '@/domain/inventory';
 import type { AmountUnit, Protocol } from '@/domain/model';
 import { doseOn } from '@/domain/schedule';
 import { isInjectable, siteUsage, sitesFor, suggestSite } from '@/domain/sites';
-import { trim } from '@/domain/units';
+import { formatAmount } from '@/domain/units';
+import { DrawReadout } from '@/features/inventory/ui';
 import { useNow } from '@/lib/hooks';
 import { useStore } from '@/store';
 import { BodyMap, type SiteMarker } from '@/ui/body-map';
@@ -18,7 +20,6 @@ import { Button, Chip, Field, num, NumberField, OptionList, Segmented } from '@/
 import { Notice } from '@/ui/feedback';
 import { Card, HStack, Screen, Section } from '@/ui/layout';
 import { CompoundPicker, DateField, isValidDay, TIME_RE, TimeField, UnitPicker } from '@/ui/pickers';
-import { SyringeGauge } from '@/ui/syringe';
 import { T } from '@/ui/text';
 import { space } from '@/ui/theme';
 
@@ -30,7 +31,7 @@ export default function LogScreen() {
   const protocols = useStore((s) => s.protocols);
   const inventory = useStore((s) => s.inventory);
   const logs = useStore((s) => s.logs);
-  const syringe = useStore((s) => s.settings.syringe);
+  const defaultSyringe = useStore((s) => s.settings.syringe);
   const logDose = useStore((s) => s.logDose);
 
   const scheduledFor = params.scheduledFor ? new Date(params.scheduledFor) : null;
@@ -72,7 +73,9 @@ export default function LogScreen() {
   const amount = { value: num(dose), unit };
   const compatible = useMemo(() => inventory.filter((i) => doseInItemUnit(i, { value: 1, unit }) !== null), [inventory, unit]);
   const item = inventory.find((i) => i.id === inventoryId);
-  const draw = item && amount.value > 0 ? drawFor(item, amount) : null;
+  const syringe = protocol?.syringe ?? defaultSyringe;
+  // The chosen vial when it has a concentration, otherwise the vial described on the protocol.
+  const draw = amount.value > 0 ? drawForProtocol({ inventoryId: inventoryId || undefined, mix: protocol?.mix, syringe }, amount, inventory, syringe) : null;
   const allowed = useMemo(() => sitesFor(route).map((s) => s.id), [route]);
   const markers: SiteMarker[] = useMemo(() => {
     const now = clock.getTime();
@@ -184,22 +187,23 @@ export default function LogScreen() {
           {compatible.length > 0 ? (
             <Section title="From vial">
               <OptionList value={inventoryId} onChange={setInventoryId} options={[{ value: '', label: 'Don’t deduct from inventory' }, ...compatible.map((i) => ({ value: i.id, label: i.name, hint: i.vendor }))]} />
-              {item && amount.value > 0 ? (
-                draw ? (
-                  <Card style={{ marginTop: space.md }}>
-                    <HStack style={{ justifyContent: 'space-between', marginBottom: space.sm }}>
-                      <T variant="bodyStrong">Draw</T>
-                      <T variant="bodyStrong" tabular>
-                        {trim(draw.units, 1)} units · {trim(draw.volumeMl, 3)} mL
-                      </T>
-                    </HStack>
-                    <SyringeGauge volumeMl={draw.volumeMl} syringe={syringe} />
-                  </Card>
-                ) : (
-                  <Notice>Set the diluent volume on this vial to see the draw.</Notice>
-                )
-              ) : null}
             </Section>
+          ) : null}
+
+          {draw ? (
+            <Section title="Draw">
+              <Card>
+                <T variant="bodyStrong">{draw.delivers.map((d) => `${formatAmount(d.amount, true)} ${d.name}`).join(' + ')}</T>
+                <DrawReadout volumeMl={draw.volumeMl} syringe={syringe} />
+                {draw.warnings.map((w) => (
+                  <View key={w} style={{ marginTop: space.sm }}>
+                    <Notice tone="warn">{w}</Notice>
+                  </View>
+                ))}
+              </Card>
+            </Section>
+          ) : item && amount.value > 0 ? (
+            <Notice>Set the water added on this vial, or describe the vial on the protocol, to see the draw.</Notice>
           ) : null}
 
           {isInjectable(route) ? (
