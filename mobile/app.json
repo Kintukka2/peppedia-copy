@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "Titra",
+    "slug": "titra",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "titra",
+    "userInterfaceStyle": "automatic",
+    "description": "Evidence-first peptide reference and private protocol log.",
+    "ios": {
+      "bundleIdentifier": "app.titra.mobile",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Titra uses the camera to photograph vials and lab reports you choose to store.",
+        "NSPhotoLibraryUsageDescription": "Titra lets you attach photos of vials and lab reports from your library."
+      }
+    },
+    "android": {
+      "package": "app.titra.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F766E",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Titra",
+      "themeColor": "#0F766E"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F4F3EF",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 96,
+          "dark": {
+            "backgroundColor": "#0E1012"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0F766E"
+        }
+      ],
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Titra lets you attach photos of vials and lab reports from your library.",
+          "cameraPermission": "Titra uses the camera to photograph vials and lab reports you choose to store.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": false,
+      "reactCompiler": true
+    }
+  }
+}
