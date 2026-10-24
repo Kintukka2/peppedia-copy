@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "../mobile/src/data/compounds.ts", "../mobile/src/data/types.ts"]
+  "include": ["src/**/*.ts", "../mobile/src/data/compounds.ts", "../mobile/src/data/types.ts", "../mobile/src/data/protocols/*.ts"]
 }

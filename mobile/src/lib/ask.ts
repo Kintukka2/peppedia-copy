@@ -1,10 +1,12 @@
 // Ask Titra. With a server configured (Settings → Ask server) questions go to
-// the server in /server, which answers with Claude grounded in the library.
-// Without one, answers are assembled on-device from library search.
-// Only the chat text is sent; none of the person's records are.
+// the server in /server, which answers with Claude grounded in the library and
+// protocol templates. Without one, answers are assembled on-device from the
+// same data. Only the chat text is sent; none of the person's records are.
 
 import { CATEGORY_LABEL, COMPOUNDS, searchCompounds } from '@/data/library';
+import { SOURCE_LABEL, stacksWith, templatesFor } from '@/data/protocols';
 import type { Compound } from '@/data/types';
+import { summaryLine } from '@/features/protocols/templates';
 import { formatHours } from '@/lib/links';
 import { EVIDENCE_LABEL, STATUS_LABEL } from '@/ui/feedback';
 
@@ -34,10 +36,17 @@ export function compoundsFor(question: string): Compound[] {
   return [...scores.values()].sort((a, b) => b.n - a.n).slice(0, 3).map((s) => s.c);
 }
 
-function describe(c: Compound): string {
+const DOSING = /\b(dose|dosing|dosage|protocol|how much|how often|mg|mcg|units?|cycle|titrat|stack|blend|start)/i;
+
+function describe(c: Compound, dosing: boolean): string {
   const lines = [`${c.name}: ${c.summary}`, `Status: ${STATUS_LABEL[c.regulatory.status]}. ${EVIDENCE_LABEL[c.evidence]}.`];
   if (c.pk) lines.push(`Half-life: about ${formatHours(c.pk.halfLifeHours)} (${c.pk.source}).`);
   else lines.push('Half-life: no reliable human data.');
+  const templates = templatesFor(c.id).filter((t) => t.kind === 'single');
+  if (templates.length) {
+    lines.push('Protocols:');
+    for (const t of templates.slice(0, dosing ? 5 : 2)) lines.push(`- ${SOURCE_LABEL[t.source]} · ${t.name}: ${summaryLine(t)}`);
+  }
   if (c.commonSideEffects.length) lines.push(`Common side effects: ${c.commonSideEffects.slice(0, 4).join(', ').toLowerCase()}.`);
   if (c.seriousRisks.length) lines.push(`Serious risks: ${c.seriousRisks.slice(0, 3).join(', ').toLowerCase()}.`);
   return lines.join('\n');
@@ -52,12 +61,17 @@ export function offlineAnswer(question: string): ChatMessage {
       content: `I couldn't match that to a compound in the library. Try a compound name, or browse categories such as ${Object.values(CATEGORY_LABEL).slice(0, 3).join(', ').toLowerCase()}.`,
     };
   }
-  const body = hits.map(describe).join('\n\n');
+  const dosing = DOSING.test(question);
+  const blocks = hits.map((h) => describe(h, dosing));
+  if (hits.length >= 2) {
+    const named = stacksWith(hits[0].id, hits[1].id);
+    if (named.length) blocks.push(`Named stacks with ${hits[0].name} and ${hits[1].name}:\n${named.map((t) => `- ${SOURCE_LABEL[t.source]} · ${t.name}: ${summaryLine(t)}`).join('\n')}`);
+  }
   return {
     role: 'assistant',
     source: 'library',
     related: hits.map((h) => h.id),
-    content: `From the library:\n\n${body}\n\nOpen a compound for mechanism, studied regimens and sources. Connect an Ask server in Settings for conversational answers.`,
+    content: `From the library:\n\n${blocks.join('\n\n')}\n\nOpen a compound for every protocol with its notes and sources. Connect an Ask server in Settings for conversational answers.`,
   };
 }
 

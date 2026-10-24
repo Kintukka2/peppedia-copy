@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import type { Sex, SyringeId, ThemePreference, WeightUnit } from '@/domain/model';
 import { SYRINGES } from '@/domain/units';
+import { HealthConnectSection } from '@/features/health/HealthConnectSection';
 import { remindersSupported, requestReminderPermission } from '@/lib/notifications';
 import { useStore } from '@/store';
 import { importData, resetAll } from '@/store/backup';
@@ -76,7 +77,7 @@ export default function SettingsScreen() {
         <Card style={{ paddingVertical: space.xs }}>
           <ToggleRow
             title="Dose reminders"
-            subtitle={remindersSupported ? 'Notifications at each scheduled time.' : 'Available in the iOS and Android apps.'}
+            subtitle={remindersSupported ? 'Notifications at each scheduled time.' : 'Runs in the Android app.'}
             value={settings.remindersEnabled}
             onChange={async (v) => {
               update({ remindersEnabled: v });
@@ -94,6 +95,8 @@ export default function SettingsScreen() {
           </View>
         ) : null}
       </Section>
+
+      <HealthConnectSection />
 
       <Section title="Ask Titra server">
         <Field
@@ -113,7 +116,7 @@ export default function SettingsScreen() {
             <View style={{ gap: space.sm }}>
               <T tone="soft">Replace your current records with sample data? A snapshot is saved first so you can restore.</T>
               <HStack>
-                <Button title="Load sample" small onPress={async () => (await importData(buildSample()), setConfirm(null), router.replace('/'))} />
+                <Button title="Load sample" small onPress={async () => (await importData({ ...buildSample(), settings }), setConfirm(null), router.replace('/'))} />
                 <Button title="Cancel" kind="ghost" small onPress={() => setConfirm(null)} />
               </HStack>
             </View>

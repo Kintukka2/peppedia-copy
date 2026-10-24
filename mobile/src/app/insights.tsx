@@ -33,14 +33,15 @@ export default function InsightsScreen() {
   const vitals = useStore((s) => s.vitals);
   const journal = useStore((s) => s.journal);
   const labs = useStore((s) => s.labs);
+  const workouts = useStore((s) => s.workouts);
   const sex = useStore((s) => s.settings.sex);
   const weightUnit = useStore((s) => s.settings.weightUnit);
   const now = useNow();
   const [windowDays, setWindowDays] = useState<Window>('14');
 
   const insights = useMemo(
-    () => buildInsights({ protocols, logs, inventory, vitals, journal, labs, weightUnit, sex, now, windowDays: Number(windowDays) }),
-    [protocols, logs, inventory, vitals, journal, labs, weightUnit, sex, now, windowDays],
+    () => buildInsights({ protocols, logs, inventory, vitals, journal, labs, workouts, weightUnit, sex, now, windowDays: Number(windowDays) }),
+    [protocols, logs, inventory, vitals, journal, labs, workouts, weightUnit, sex, now, windowDays],
   );
 
   const card = (i: Insight) => {
@@ -67,7 +68,7 @@ export default function InsightsScreen() {
   return (
     <Screen back title="Insights">
       <View style={{ marginBottom: space.lg }}>
-        <Notice>Observations from your own records. They describe timing and trends, not causes, and are not medical advice.</Notice>
+        <Notice>Observations from your own records, including Google Fit activity. They describe timing and trends, not causes.</Notice>
       </View>
 
       <Segmented

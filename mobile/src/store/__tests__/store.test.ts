@@ -1,5 +1,8 @@
 import { buildExport, doseLogCsv, importData, listSnapshots, parseExport, restoreSnapshot } from '../backup';
 import { EMPTY_DATA, getData, migrate, useStore } from '../index';
+import { TEMPLATE_BY_ID } from '@/data/protocols';
+import { parseDay } from '@/domain/schedule';
+
 import { buildSample } from '../sample';
 
 beforeEach(() => {
@@ -120,8 +123,17 @@ describe('backup', () => {
 describe('sample', () => {
   it('builds a consistent dataset', () => {
     const s = buildSample(new Date('2026-03-01T12:00:00'));
-    expect(s.protocols).toHaveLength(3);
+    expect(s.protocols).toHaveLength(4);
     expect(s.logs.length).toBeGreaterThan(15);
+    // The repair blend started later than the others and logs only from its own start.
+    const blend = s.protocols.find((p) => p.compoundId === 'bpc-157')!;
+    const blendLogs = s.logs.filter((l) => l.protocolId === blend.id);
+    expect(blendLogs.length).toBeGreaterThan(10);
+    expect(blendLogs.every((l) => new Date(l.scheduledFor!) >= parseDay(blend.startDate))).toBe(true);
+    expect(s.inventory.find((i) => i.id === blend.inventoryId)!.components).toHaveLength(2);
+    expect(TEMPLATE_BY_ID[blend.templateId!]?.kind).toBe('blend');
+    expect(s.vitals.some((v) => v.kind === 'steps')).toBe(true);
+    expect(s.workouts.length).toBeGreaterThan(5);
     // Today's doses are left open for the Today screen.
     expect(s.logs.every((l) => new Date(l.scheduledFor!) < new Date('2026-03-01T00:00:00'))).toBe(true);
     for (const i of s.inventory) expect(i.open?.remaining ?? 0).toBeGreaterThanOrEqual(0);

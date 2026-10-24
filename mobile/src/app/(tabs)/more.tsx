@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import {
   Activity,
-  BookMarked,
+  Footprints,
+  Layers,
   ClipboardList,
   FlaskConical,
   HardDriveDownload,
@@ -44,6 +45,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: 'Health',
     items: [
+      { title: 'Activity', subtitle: 'Steps, workouts and energy from Google Fit', href: '/activity', Icon: Footprints },
       { title: 'Vitals', subtitle: 'Weight, body fat, heart rate, BP, sleep', href: '/vitals', Icon: HeartPulse },
       { title: 'Labs', subtitle: 'Biomarkers and reference ranges', href: '/labs', Icon: FlaskConical },
       { title: 'Journal', subtitle: 'Mood, energy and symptoms', href: '/journal', Icon: NotebookPen },
@@ -53,16 +55,16 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: 'Learn',
     items: [
+      { title: 'Protocol library', subtitle: 'Label, trial, clinic, community and vendor protocols', href: '/templates', Icon: Layers },
       { title: 'Ask Titra', subtitle: 'Questions answered from the library', href: '/ask', Icon: MessageCircleQuestion },
-      { title: 'Methodology', subtitle: 'How evidence, levels and checks work', href: '/about', Icon: BookMarked },
     ],
   },
   {
     title: 'App',
     items: [
-      { title: 'Settings', subtitle: 'Units, reminders, theme', href: '/settings', Icon: Settings },
+      { title: 'Settings', subtitle: 'Units, reminders, Google Fit, theme', href: '/settings', Icon: Settings },
       { title: 'Backups & export', subtitle: 'Snapshots, JSON and CSV', href: '/backups', Icon: HardDriveDownload },
-      { title: 'About Titra', subtitle: 'Principles and disclaimer', href: '/about', Icon: Info },
+      { title: 'About & methodology', subtitle: 'How evidence, sources, levels and checks work', href: '/about', Icon: Info },
     ],
   },
 ];

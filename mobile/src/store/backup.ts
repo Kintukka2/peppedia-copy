@@ -100,7 +100,7 @@ export async function importData(data: Data): Promise<void> {
 
 export async function resetAll(): Promise<void> {
   await takeSnapshot('before-reset');
-  // Records are cleared; preferences (units, theme, accepted terms) are kept.
+  // Records are cleared; preferences (units, theme, Health Connect, onboarding) are kept.
   useStore.getState().replaceAll(migrate({ settings: getData().settings }));
 }
 

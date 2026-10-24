@@ -3,8 +3,8 @@
 The Titra app answers "Ask" questions offline from its built-in library. Run this small server to get conversational answers from Claude, grounded in the same library.
 
 - **Model:** `claude-opus-5-5` (override with `TITRA_MODEL`), at `medium` effort.
-- **Grounding:** the full compound library (`mobile/src/data/compounds.ts`) is sent as a cached system prompt, so repeat questions read it from the prompt cache.
-- **Safety:** the system prompt keeps answers to labelled or trial regimens with attribution, never personal dosing advice, no sourcing help, and points urgent symptoms to emergency care. Server-side refusal fallbacks are on (`fallbacks: "default"`).
+- **Grounding:** the compound library (`mobile/src/data/compounds.ts`) and every protocol template (`mobile/src/data/protocols/`) are sent as a cached system prompt, so repeat questions read them from the prompt cache.
+- **Answers:** dosing, protocols, stacks and blends are in scope. Every number is attributed to its source type (label, trial, clinic, community, vendor), thin evidence is called out, and urgent symptoms are pointed to emergency care. Server-side refusal fallbacks are on (`fallbacks: "default"`).
 - **Privacy:** the app sends only the chat text. No protocols, logs, vitals or labs leave the device. The server logs token counts, not content.
 
 ## Run
@@ -31,7 +31,7 @@ Then in the app: **Settings → Ask Titra server →** `http://<your-machine-ip>
 `POST /ask` with `{ "messages": [{ "role": "user", "content": "..." }] }` (up to 16 turns, alternating, last one from the user).
 Returns `{ "answer": string, "related": string[] /* compound ids */, "model": string }`.
 
-`GET /health` returns `{ ok, model, compounds }`.
+`GET /health` returns `{ ok, model, compounds, protocols }`.
 
 ## Deploying
 

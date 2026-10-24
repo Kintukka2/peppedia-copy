@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Activity, Footprints, HeartPulse, Moon, Percent, Plus, Ruler, Scale } from 'lucide-react-native';
+import { Activity, Dumbbell, Flame, Footprints, HeartPulse, Moon, Percent, Plus, Route as RouteIcon, Ruler, Scale } from 'lucide-react-native';
 import { useMemo, useRef, useState, type ComponentType } from 'react';
 import { ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 
@@ -8,7 +8,8 @@ import type { VitalKind } from '@/domain/model';
 import { fromKg, toKg } from '@/domain/units';
 import { ConfirmBar, TrashButton } from '@/features/health/components';
 import { dateLabel, dateTimeLabel, formatNumber } from '@/features/health/format';
-import { changeOver, entriesOf, formatVital, formatVitalChange, isVitalKind, toDisplay, unitFor, VITAL_KINDS, VITAL_META, vitalAxis, type VitalChange } from '@/features/health/vitals';
+import { mirrorDeleted } from '@/features/health/sync';
+import { changeOver, DAILY_TOTAL_KINDS, entriesOf, formatVital, formatVitalChange, isVitalKind, toDisplay, unitFor, VITAL_KINDS, VITAL_META, vitalAxis, type VitalChange } from '@/features/health/vitals';
 import { useStore } from '@/store';
 import { TrendChart } from '@/ui/charts';
 import { Button, Chip, num, NumberField } from '@/ui/controls';
@@ -26,6 +27,9 @@ const ICON: Record<VitalKind, ComponentType<{ size?: number; color?: string }>> 
   bloodPressure: Activity,
   sleep: Moon,
   steps: Footprints,
+  distance: RouteIcon,
+  activeKcal: Flame,
+  exerciseMin: Dumbbell,
   waist: Ruler,
 };
 
@@ -38,6 +42,7 @@ export default function VitalsScreen() {
   const goalKg = useStore((s) => s.settings.goalWeightKg);
   const updateSettings = useStore((s) => s.updateSettings);
   const deleteVital = useStore((s) => s.deleteVital);
+  const healthSync = useStore((s) => s.settings.healthSync);
 
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE);
@@ -228,7 +233,7 @@ export default function VitalsScreen() {
               <View key={e.id}>
                 <Row
                   title={`${formatVital(e, weightUnit)} ${unit}`}
-                  subtitle={dateTimeLabel(new Date(e.t))}
+                  subtitle={[DAILY_TOTAL_KINDS.includes(kind) ? dateLabel(new Date(e.t)) : dateTimeLabel(new Date(e.t)), e.source === 'health-connect' ? 'Health Connect' : null].filter(Boolean).join(' · ')}
                   right={<TrashButton label={`Delete entry from ${dateLabel(new Date(e.t))}`} onPress={() => setConfirmId(confirmId === e.id ? null : e.id)} />}
                   last={i === shown.length - 1 && confirmId !== e.id}
                 />
@@ -238,6 +243,7 @@ export default function VitalsScreen() {
                     onCancel={() => setConfirmId(null)}
                     onConfirm={() => {
                       deleteVital(e.id);
+                      mirrorDeleted(e);
                       setConfirmId(null);
                     }}
                   />
@@ -252,7 +258,7 @@ export default function VitalsScreen() {
       <HStack style={{ marginTop: latest ? 0 : space.xl, justifyContent: 'center' }}>
         <Dot color={c.inkFaint} size={4} />
         <T variant="small" tone="faint" style={{ flexShrink: 1 }}>
-          Health Connect / Apple Health sync is planned; entries here are manual.
+          {healthSync ? 'Synced entries come from Health Connect, including Google Fit.' : 'Connect Google Fit through Health Connect in Settings to fill these in automatically.'}
         </T>
       </HStack>
     </Screen>

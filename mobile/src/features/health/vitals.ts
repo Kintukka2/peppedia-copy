@@ -3,7 +3,10 @@ import { fromKg, toKg } from '@/domain/units';
 
 import { axisValue, formatChange, formatNumber } from './format';
 
-export const VITAL_KINDS: VitalKind[] = ['weight', 'bodyFat', 'restingHr', 'bloodPressure', 'sleep', 'steps', 'waist'];
+export const VITAL_KINDS: VitalKind[] = ['weight', 'bodyFat', 'restingHr', 'bloodPressure', 'sleep', 'steps', 'distance', 'activeKcal', 'exerciseMin', 'waist'];
+
+/** Kinds stored as one total per day. */
+export const DAILY_TOTAL_KINDS: VitalKind[] = ['steps', 'distance', 'activeKcal', 'exerciseMin'];
 
 interface VitalMeta {
   label: string;
@@ -77,7 +80,37 @@ export const VITAL_META: Record<VitalKind, VitalMeta> = {
     decimals: 0,
     min: 0,
     max: 200_000,
-    empty: 'Record a daily step count from your phone or watch.',
+    empty: 'Record a daily step count, or connect Health Connect in Settings to sync it from Google Fit.',
+  },
+  distance: {
+    label: 'Distance',
+    name: 'distance',
+    emptyTitle: 'No distance yet',
+    decimals: 1,
+    min: 0,
+    max: 300,
+    hint: 'Kilometres for the day.',
+    empty: 'Daily distance walked, run or cycled. Connect Health Connect in Settings to sync it from Google Fit.',
+  },
+  activeKcal: {
+    label: 'Active energy',
+    name: 'active energy',
+    emptyTitle: 'No active energy yet',
+    decimals: 0,
+    min: 0,
+    max: 10_000,
+    hint: 'Kilocalories burned through activity for the day.',
+    empty: 'Energy burned through activity each day. Connect Health Connect in Settings to sync it from Google Fit.',
+  },
+  exerciseMin: {
+    label: 'Exercise',
+    name: 'exercise time',
+    emptyTitle: 'No exercise time yet',
+    decimals: 0,
+    min: 0,
+    max: 1440,
+    hint: 'Minutes of workouts for the day.',
+    empty: 'Minutes spent in workouts each day. Connect Health Connect in Settings to sync sessions from Google Fit.',
   },
   waist: {
     label: 'Waist',
@@ -109,6 +142,12 @@ export function unitFor(kind: VitalKind, weightUnit: WeightUnit): string {
       return 'h';
     case 'steps':
       return 'steps';
+    case 'distance':
+      return 'km';
+    case 'activeKcal':
+      return 'kcal';
+    case 'exerciseMin':
+      return 'min';
     case 'waist':
       return 'cm';
   }
@@ -139,7 +178,7 @@ export function formatVitalChange(kind: VitalKind, delta: number, delta2: number
 
 export function vitalAxis(kind: VitalKind): (v: number) => string {
   const d = VITAL_META[kind].decimals;
-  return (v) => (kind === 'steps' || Math.abs(v) >= 1000 ? axisValue(v) : v.toFixed(d));
+  return (v) => (kind === 'steps' || kind === 'activeKcal' || Math.abs(v) >= 1000 ? axisValue(v) : v.toFixed(d));
 }
 
 export interface TimedVital extends VitalEntry {

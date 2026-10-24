@@ -4,7 +4,8 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { getCompound } from '@/data/library';
-import type { Compound } from '@/data/types';
+import { PROTOCOL_TEMPLATES } from '@/data/protocols';
+import type { Compound, ProtocolTemplate } from '@/data/types';
 import type { AmountUnit, InventoryForm, InventoryItem, OpenVial, VialComponent } from '@/domain/model';
 import { toBase, trim } from '@/domain/units';
 import { matchCompound } from '@/features/inventory/format';
@@ -43,6 +44,17 @@ type Params = {
 };
 
 const MAX_COMPONENTS = 4;
+
+/** "GLOW blend · 50/10/10 mg"; names that already carry the ratio ("Wolverine blend 5/5") are left as they are. */
+function presetLabel(t: ProtocolTemplate): string {
+  const base = t.name.split(' (')[0];
+  return /\d/.test(base) ? base : `${base} · ${t.blendVial!.map((b) => trim(b.amount.value)).join('/')} ${t.blendVial![0].amount.unit}`;
+}
+
+/** One preset per distinct premixed vial composition (GLOW, KLOW, Wolverine …). */
+const blendPresets: ProtocolTemplate[] = PROTOCOL_TEMPLATES.filter((t) => t.blendVial && t.blendVial.length <= MAX_COMPONENTS).filter(
+  (t, i, all) => all.findIndex((x) => JSON.stringify(x.blendVial) === JSON.stringify(t.blendVial)) === i,
+);
 
 const FORM_HINT: Record<InventoryForm, string> = {
   powder: 'Lyophilised powder you mix with bacteriostatic water.',
@@ -241,10 +253,34 @@ export default function InventoryFormScreen() {
     else router.replace(`/inventory/${item.id}`);
   };
 
+  const applyBlend = (t: ProtocolTemplate) => {
+    setForm('powder');
+    setBasis('vial');
+    setDrafts(
+      (t.blendVial ?? []).map((b, i) => {
+        const compound = getCompound(b.compoundId);
+        return { key: `c${i}`, compoundId: b.compoundId, name: compound?.name ?? b.compoundId, amount: trim(b.amount.value, 6), unit: b.amount.unit, picking: false };
+      }),
+    );
+  };
+
   const primaryLabel = oral ? 'Amount per unit' : perMl ? 'Strength per mL' : drafts.length > 1 ? `${primary.name || 'Primary'} per vial` : 'Amount per vial';
 
   return (
     <Screen modal title={existing ? 'Edit item' : 'New inventory item'} footer={<Button title={existing ? 'Save changes' : 'Add to inventory'} onPress={save} />}>
+      {!existing && blendPresets.length ? (
+        <Section title="Premixed blend">
+          <HStack wrap>
+            {blendPresets.map((t) => (
+              <Chip key={t.id} label={presetLabel(t)} onPress={() => applyBlend(t)} />
+            ))}
+          </HStack>
+          <T variant="small" tone="faint">
+            Fills every component at the amounts vendors sell. Adjust to match your label.
+          </T>
+        </Section>
+      ) : null}
+
       <Section title="Compound">
         {primary.picking ? (
           <>

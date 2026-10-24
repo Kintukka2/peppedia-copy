@@ -1,10 +1,10 @@
-// Example records for exploring the app. Built from approved medicines at
-// labelled regimens (tirzepatide titration, testosterone cypionate, hCG) so
-// the sample never models an unapproved compound's dose.
+// Example records for exploring the app: a labelled tirzepatide titration,
+// clinic-style TRT with hCG, and a community BPC-157 + TB-500 repair blend,
+// with five weeks of logs, vitals, activity, journal entries and labs.
 
 import { addDays, startOfDay, subDays } from 'date-fns';
 
-import type { DoseLog, InventoryItem, JournalEntry, LabResult, Protocol, Supply, VitalEntry } from '@/domain/model';
+import type { DoseLog, InventoryItem, JournalEntry, LabResult, Protocol, Supply, VitalEntry, Workout } from '@/domain/model';
 import { dayKey, doseOn, occurrences } from '@/domain/schedule';
 import { suggestSite } from '@/domain/sites';
 import { deduct } from '@/domain/inventory';
@@ -69,6 +69,25 @@ export function buildSample(now = new Date()): Data {
     createdAt: created,
   };
 
+  let blendInv: InventoryItem = {
+    id: uid(),
+    name: 'BPC-157 + TB-500 10 mg blend',
+    form: 'powder',
+    components: [
+      { compoundId: 'bpc-157', name: 'BPC-157', amount: { value: 5, unit: 'mg' } },
+      { compoundId: 'thymosin-beta-4', name: 'TB-500', amount: { value: 5, unit: 'mg' } },
+    ],
+    unopened: 2,
+    open: { openedAt: subDays(now, 21).toISOString(), remaining: 5, diluentMl: 2 },
+    vendor: 'Research vendor',
+    batch: 'WB-0915',
+    pricePerVial: 75,
+    purchasedAt: dayKey(subDays(now, 24)),
+    expiresAt: dayKey(addDays(now, 300)),
+    lowStockAt: 1,
+    createdAt: created,
+  };
+
   const tirz: Protocol = {
     id: uid(),
     compoundId: 'tirzepatide',
@@ -117,12 +136,30 @@ export function buildSample(now = new Date()): Data {
     color: PROTOCOL_COLORS[2],
     createdAt: created,
   };
+  const blendStart = startOfDay(subDays(now, 20));
+  const blend: Protocol = {
+    id: uid(),
+    compoundId: 'bpc-157',
+    name: 'BPC-157 + TB-500',
+    route: 'subq',
+    dose: { value: 250, unit: 'mcg' },
+    schedule: { kind: 'daily', times: ['08:00'] },
+    startDate: dayKey(blendStart),
+    endDate: dayKey(addDays(blendStart, 41)),
+    inventoryId: blendInv.id,
+    reminders: true,
+    status: 'active',
+    color: PROTOCOL_COLORS[3],
+    notes: 'Shoulder. 250 mcg of each per shot from the 5/5 blend.',
+    templateId: 'blend-wolverine-5-5',
+    createdAt: created,
+  };
 
   // Past doses with ~93 % adherence and rotated sites.
   const logs: DoseLog[] = [];
   const today = startOfDay(now);
-  for (const p of [tirz, test, hcg]) {
-    for (const at of occurrences(p, start, now)) {
+  for (const p of [tirz, test, hcg, blend]) {
+    for (const at of occurrences(p, p.id === blend.id ? blendStart : start, now)) {
       // Leave today's doses open so the Today screen has something to log.
       if (at >= today) continue;
       const skip = rand() < 0.07;
@@ -146,6 +183,7 @@ export function buildSample(now = new Date()): Data {
         if (p.id === tirz.id) tirzInv = deduct(tirzInv, dose, at2);
         if (p.id === test.id) testInv = deduct(testInv, dose, at2);
         if (p.id === hcg.id) hcgInv = deduct(hcgInv, dose, at2);
+        if (p.id === blend.id) blendInv = deduct(blendInv, dose, at2);
       }
     }
   }
@@ -162,6 +200,36 @@ export function buildSample(now = new Date()): Data {
   }
   vitals.push({ id: uid(), kind: 'bodyFat', value: 27.8, at: subDays(now, 34).toISOString() });
   vitals.push({ id: uid(), kind: 'bodyFat', value: 26.9, at: subDays(now, 4).toISOString() });
+
+  // Daily activity totals and workouts, shaped like a Google Fit history.
+  const workouts: Workout[] = [];
+  for (let d = 35; d >= 1; d--) {
+    const day = subDays(startOfDay(now), d);
+    const at = new Date(day.getTime() + 12 * 3_600_000).toISOString();
+    const trained = day.getDay() === 1 || day.getDay() === 3 || day.getDay() === 6;
+    const steps = Math.round(5200 + (35 - d) * 70 + rand() * 4200 + (trained ? 2500 : 0));
+    const exercise = trained ? 35 + Math.round(rand() * 25) : rand() < 0.3 ? 20 : 0;
+    vitals.push({ id: uid(), kind: 'steps', value: steps, at });
+    vitals.push({ id: uid(), kind: 'distance', value: Math.round(steps * 0.00074 * 10) / 10, at });
+    vitals.push({ id: uid(), kind: 'activeKcal', value: Math.round(steps * 0.04 + exercise * 6), at });
+    if (exercise) {
+      vitals.push({ id: uid(), kind: 'exerciseMin', value: exercise, at });
+      const startAt = new Date(day.getTime() + (trained ? 18 : 7) * 3_600_000);
+      workouts.push({
+        id: uid(),
+        type: trained ? (day.getDay() === 6 ? 56 : 70) : 79,
+        start: startAt.toISOString(),
+        end: new Date(startAt.getTime() + exercise * 60_000).toISOString(),
+        kcal: exercise * 7,
+        distanceKm: day.getDay() === 6 ? Math.round(exercise * 0.16 * 10) / 10 : undefined,
+      });
+    }
+  }
+  // Today so far, as a morning sync would show it.
+  const todayAt = new Date(startOfDay(now).getTime() + 12 * 3_600_000).toISOString();
+  vitals.push({ id: uid(), kind: 'steps', value: 3420, at: todayAt });
+  vitals.push({ id: uid(), kind: 'distance', value: 2.5, at: todayAt });
+  vitals.push({ id: uid(), kind: 'activeKcal', value: 137, at: todayAt });
 
   const journal: JournalEntry[] = [];
   const stepUp = addDays(start, 28);
@@ -201,14 +269,15 @@ export function buildSample(now = new Date()): Data {
   ];
 
   return {
-    protocols: [tirz, test, hcg],
+    protocols: [tirz, test, hcg, blend],
     logs,
-    inventory: [tirzInv, testInv, hcgInv],
+    inventory: [tirzInv, testInv, hcgInv, blendInv],
     supplies,
     vitals,
     journal,
     labs,
-    bookmarks: ['tirzepatide', 'semaglutide', 'bpc-157'],
+    workouts,
+    bookmarks: ['tirzepatide', 'retatrutide', 'bpc-157', 'thymosin-beta-4'],
     settings: { ...DEFAULT_SETTINGS, sex: 'male', goalWeightKg: 90 },
   };
 }

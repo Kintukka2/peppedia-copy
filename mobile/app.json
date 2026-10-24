@@ -2,20 +2,12 @@
   "expo": {
     "name": "Titra",
     "slug": "titra",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "titra",
     "userInterfaceStyle": "automatic",
-    "description": "Evidence-first peptide reference and private protocol log.",
-    "ios": {
-      "bundleIdentifier": "app.titra.mobile",
-      "supportsTablet": false,
-      "infoPlist": {
-        "NSCameraUsageDescription": "Titra uses the camera to photograph vials and lab reports you choose to store.",
-        "NSPhotoLibraryUsageDescription": "Titra lets you attach photos of vials and lab reports from your library."
-      }
-    },
+    "description": "Peptide library, labelled protocols and a private tracker, synced with Google Fit through Health Connect.",
     "android": {
       "package": "app.titra.mobile",
       "adaptiveIcon": {
@@ -23,13 +15,29 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_BODY_FAT",
+        "android.permission.health.READ_BLOOD_PRESSURE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_HEALTH_DATA_HISTORY",
+        "android.permission.health.WRITE_WEIGHT",
+        "android.permission.health.WRITE_BODY_FAT",
+        "android.permission.health.WRITE_BLOOD_PRESSURE"
+      ],
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ],
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 2
     },
     "web": {
       "output": "single",
@@ -65,11 +73,24 @@
           "microphonePermission": false
         }
       ],
-      "expo-font"
+      "expo-font",
+      "react-native-health-connect",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true
-    }
+    },
+    "platforms": [
+      "android",
+      "web"
+    ]
   }
 }

@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
-import { Bookmark, Search } from 'lucide-react-native';
+import { Bookmark, ChevronRight, Layers, Search } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { CATEGORY_LABEL, COMPOUNDS, searchCompounds } from '@/data/library';
+import { PROTOCOL_TEMPLATES, stackTemplates } from '@/data/protocols';
 import type { Compound, CompoundCategory, RegulatoryStatus } from '@/data/types';
 import { useStore } from '@/store';
 import { Chip, Field } from '@/ui/controls';
 import { Badge, EmptyState, EvidenceMeter, STATUS_LABEL, STATUS_TONE } from '@/ui/feedback';
-import { Card, Row, Screen, Section } from '@/ui/layout';
+import { Card, HStack, Row, Screen, Section } from '@/ui/layout';
 import { T } from '@/ui/text';
 import { space, useTheme } from '@/ui/theme';
 
@@ -53,7 +54,7 @@ export default function LibraryScreen() {
   );
 
   return (
-    <Screen large title="Library" subtitle={`${COMPOUNDS.length} compounds · evidence first`}>
+    <Screen large title="Library" subtitle={`${COMPOUNDS.length} compounds · ${PROTOCOL_TEMPLATES.length} protocols`}>
       <Field value={q} onChangeText={setQ} placeholder="Search by name, alias or effect" suffix={<Search size={18} color={c.inkFaint} />} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space.lg, marginBottom: space.sm }} contentContainerStyle={{ gap: space.sm, paddingHorizontal: space.lg }}>
         <Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
@@ -67,6 +68,21 @@ export default function LibraryScreen() {
           <Chip key={st} label={STATUS_LABEL[st]} selected={status === st} onPress={() => setStatus(status === st ? null : st)} />
         ))}
       </ScrollView>
+
+      {!q && filter === 'all' && !status ? (
+        <Card onPress={() => router.push('/templates')} tint={c.accentSoft} style={{ borderColor: 'transparent', marginBottom: space.xl }}>
+          <HStack gap={space.md}>
+            <Layers size={20} color={c.accent} />
+            <View style={{ flex: 1 }}>
+              <T variant="heading">Protocol library</T>
+              <T variant="small" tone="soft">
+                {PROTOCOL_TEMPLATES.length} protocols and {stackTemplates().length} stacks & blends, each labelled label, trial, clinic, community or vendor.
+              </T>
+            </View>
+            <ChevronRight size={18} color={c.accent} />
+          </HStack>
+        </Card>
+      ) : null}
 
       {results.length === 0 ? (
         <EmptyState title={filter === 'saved' ? 'Nothing saved yet' : 'No matches'} body={filter === 'saved' ? 'Tap the bookmark on any compound to keep it here.' : 'Try another name or alias.'} />

@@ -5,9 +5,12 @@ import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { getCompound, ROUTE_LABEL } from '@/data/library';
-import type { Compound, Route } from '@/data/types';
+import { TEMPLATE_BY_ID, templatesFor } from '@/data/protocols';
+import type { Compound, ProtocolTemplate, Route } from '@/data/types';
 import { doseInItemUnit } from '@/domain/inventory';
 import type { AmountUnit, Protocol, Schedule, TitrationStep } from '@/domain/model';
+import { TemplateOption } from '@/features/protocols/components';
+import { endDateFor, protocolName } from '@/features/protocols/templates';
 import { requestReminderPermission } from '@/lib/notifications';
 import { nextColor, uid, useStore } from '@/store';
 import { Button, Chip, Field, num, NumberField, OptionList, Segmented, ToggleRow } from '@/ui/controls';
@@ -25,10 +28,38 @@ interface StepDraft {
 }
 
 const ALL_ROUTES: Route[] = ['subq', 'im', 'oral', 'nasal', 'topical', 'iv'];
+const DEFAULT_STEPS: StepDraft[] = [
+  { weeks: '4', dose: '' },
+  { weeks: '4', dose: '' },
+];
+
+/** Form fields a template fills in, for the component at `index` (stacks carry one per compound). */
+function draftFrom(t: ProtocolTemplate, startDate: string, index = 0) {
+  const part = t.components[index];
+  const s = t.schedule;
+  const titration = index === 0 && t.titration && t.titration.length > 1 ? t.titration : null;
+  return {
+    name: protocolName(t, index),
+    route: t.route,
+    dose: String(part.dose.value),
+    unit: part.dose.unit,
+    useTitration: !!titration,
+    steps: titration ? titration.map((x) => ({ weeks: String(x.weeks), dose: String(x.dose.value) })) : DEFAULT_STEPS,
+    kind: s.kind,
+    times: s.kind === 'daily' ? s.times : ['08:00'],
+    time: s.kind === 'everyNDays' || s.kind === 'weekdays' ? s.time : '08:00',
+    days: s.kind === 'weekdays' ? s.days : [new Date().getDay()],
+    everyN: s.kind === 'everyNDays' ? String(s.n) : '2',
+    useCycle: !!t.cycle,
+    onWeeks: String(t.cycle?.onWeeks ?? 8),
+    offWeeks: String(t.cycle?.offWeeks ?? 4),
+    endDate: endDateFor(startDate, t.durationWeeks) ?? '',
+  };
+}
 
 export default function ProtocolForm() {
   const { c } = useTheme();
-  const params = useLocalSearchParams<{ id?: string; compoundId?: string }>();
+  const params = useLocalSearchParams<{ id?: string; compoundId?: string; templateId?: string }>();
   const existing = useStore((s) => s.protocols.find((p) => p.id === params.id));
   const protocols = useStore((s) => s.protocols);
   const inventory = useStore((s) => s.inventory);
@@ -36,34 +67,56 @@ export default function ProtocolForm() {
   const deleteProtocol = useStore((s) => s.deleteProtocol);
   const remindersEnabled = useStore((s) => s.settings.remindersEnabled);
 
-  const initialCompound = getCompound(existing?.compoundId ?? params.compoundId);
+  const initialTemplate = existing ? undefined : TEMPLATE_BY_ID[params.templateId ?? ''];
+  const initialCompound = getCompound(existing?.compoundId ?? initialTemplate?.components[0].compoundId ?? params.compoundId);
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const seed = initialTemplate ? draftFrom(initialTemplate, today) : null;
   const [compound, setCompound] = useState<Compound | null>(initialCompound);
-  const [name, setName] = useState(existing?.name ?? initialCompound?.name ?? '');
+  const [templateId, setTemplateId] = useState<string | undefined>(existing?.templateId ?? initialTemplate?.id);
+  const [name, setName] = useState(existing?.name ?? seed?.name ?? initialCompound?.name ?? '');
   const [picking, setPicking] = useState(!existing && !initialCompound);
-  const [route, setRoute] = useState<Route>(existing?.route ?? initialCompound?.routes[0] ?? 'subq');
-  const [dose, setDose] = useState(existing ? String(existing.dose.value) : '');
-  const [unit, setUnit] = useState<AmountUnit>(existing?.dose.unit ?? 'mg');
-  const [useTitration, setUseTitration] = useState(!!existing?.titration?.length);
-  const [steps, setSteps] = useState<StepDraft[]>(
-    existing?.titration?.map((s) => ({ weeks: String(s.weeks), dose: String(s.dose.value) })) ?? [
-      { weeks: '4', dose: '' },
-      { weeks: '4', dose: '' },
-    ],
-  );
-  const [kind, setKind] = useState<ScheduleKind>(existing?.schedule.kind ?? 'daily');
-  const [times, setTimes] = useState<string[]>(existing?.schedule.kind === 'daily' ? existing.schedule.times : ['08:00']);
-  const [time, setTime] = useState(existing && existing.schedule.kind !== 'daily' && existing.schedule.kind !== 'asNeeded' ? existing.schedule.time : '08:00');
-  const [days, setDays] = useState<number[]>(existing?.schedule.kind === 'weekdays' ? existing.schedule.days : [new Date().getDay()]);
-  const [everyN, setEveryN] = useState(existing?.schedule.kind === 'everyNDays' ? String(existing.schedule.n) : '2');
-  const [useCycle, setUseCycle] = useState(!!existing?.cycle);
-  const [onWeeks, setOnWeeks] = useState(String(existing?.cycle?.onWeeks ?? 8));
-  const [offWeeks, setOffWeeks] = useState(String(existing?.cycle?.offWeeks ?? 4));
-  const [startDate, setStartDate] = useState(existing?.startDate ?? format(new Date(), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(existing?.endDate ?? '');
+  const [route, setRoute] = useState<Route>(existing?.route ?? seed?.route ?? initialCompound?.routes[0] ?? 'subq');
+  const [dose, setDose] = useState(existing ? String(existing.dose.value) : (seed?.dose ?? ''));
+  const [unit, setUnit] = useState<AmountUnit>(existing?.dose.unit ?? seed?.unit ?? 'mg');
+  const [useTitration, setUseTitration] = useState(existing ? !!existing.titration?.length : !!seed?.useTitration);
+  const [steps, setSteps] = useState<StepDraft[]>(existing?.titration?.map((s) => ({ weeks: String(s.weeks), dose: String(s.dose.value) })) ?? seed?.steps ?? DEFAULT_STEPS);
+  const [kind, setKind] = useState<ScheduleKind>(existing?.schedule.kind ?? seed?.kind ?? 'daily');
+  const [times, setTimes] = useState<string[]>(existing?.schedule.kind === 'daily' ? existing.schedule.times : (seed?.times ?? ['08:00']));
+  const [time, setTime] = useState(existing && existing.schedule.kind !== 'daily' && existing.schedule.kind !== 'asNeeded' ? existing.schedule.time : (seed?.time ?? '08:00'));
+  const [days, setDays] = useState<number[]>(existing?.schedule.kind === 'weekdays' ? existing.schedule.days : (seed?.days ?? [new Date().getDay()]));
+  const [everyN, setEveryN] = useState(existing?.schedule.kind === 'everyNDays' ? String(existing.schedule.n) : (seed?.everyN ?? '2'));
+  const [useCycle, setUseCycle] = useState(existing ? !!existing.cycle : !!seed?.useCycle);
+  const [onWeeks, setOnWeeks] = useState(existing?.cycle ? String(existing.cycle.onWeeks) : (seed?.onWeeks ?? '8'));
+  const [offWeeks, setOffWeeks] = useState(existing?.cycle ? String(existing.cycle.offWeeks) : (seed?.offWeeks ?? '4'));
+  const [startDate, setStartDate] = useState(existing?.startDate ?? today);
+  const [endDate, setEndDate] = useState(existing?.endDate ?? seed?.endDate ?? '');
   const [inventoryId, setInventoryId] = useState<string>(existing?.inventoryId ?? '');
   const [reminders, setReminders] = useState(existing?.reminders ?? true);
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
+
+  // A blend is dosed by its first component, so it is offered only from that compound.
+  const templates = useMemo(() => (compound ? templatesFor(compound.id).filter((t) => t.kind !== 'blend' || t.components[0].compoundId === compound.id) : []), [compound]);
+
+  const applyTemplate = (t: ProtocolTemplate) => {
+    const d = draftFrom(t, startDate, Math.max(0, t.components.findIndex((x) => x.compoundId === compound?.id)));
+    setTemplateId(t.id);
+    setName(d.name);
+    setRoute(d.route);
+    setDose(d.dose);
+    setUnit(d.unit);
+    setUseTitration(d.useTitration);
+    setSteps(d.steps);
+    setKind(d.kind);
+    setTimes(d.times);
+    setTime(d.time);
+    setDays(d.days);
+    setEveryN(d.everyN);
+    setUseCycle(d.useCycle);
+    setOnWeeks(d.onWeeks);
+    setOffWeeks(d.offWeeks);
+    setEndDate(d.endDate);
+  };
 
   const routes = compound?.routes.length ? compound.routes : ALL_ROUTES;
 
@@ -74,9 +127,12 @@ export default function ProtocolForm() {
 
   const pickCompound = (picked: Compound) => {
     setCompound(picked);
+    setTemplateId(undefined);
     setName(picked.name);
     setRoute(picked.routes[0] ?? 'subq');
-    if (picked.classes.includes('gonadotropin') || picked.id === 'somatropin') setUnit('iu');
+    const typical = templatesFor(picked.id)[0];
+    if (typical) setUnit(typical.components.find((x) => x.compoundId === picked.id)?.dose.unit ?? typical.components[0].dose.unit);
+    else if (picked.classes.includes('gonadotropin') || picked.id === 'somatropin') setUnit('iu');
     setPicking(false);
   };
 
@@ -133,6 +189,7 @@ export default function ProtocolForm() {
       status: existing?.status ?? 'active',
       color: existing?.color ?? nextColor(protocols),
       notes: notes.trim() || undefined,
+      templateId,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     upsertProtocol(p);
@@ -148,6 +205,7 @@ export default function ProtocolForm() {
             onPick={pickCompound}
             onCustom={(n) => {
               setCompound(null);
+              setTemplateId(undefined);
               setName(n);
               setPicking(false);
             }}
@@ -169,16 +227,14 @@ export default function ProtocolForm() {
 
       {!picking && (
         <>
-          {compound && compound.studiedRegimens.length > 0 ? (
-            <Section title="For reference">
-              <Notice title="Studied or labelled regimens">
-                {compound.studiedRegimens.map((r, i) => (
-                  <T key={i} variant="small" tone="soft" style={{ marginTop: i ? 6 : 0 }}>
-                    <T variant="smallStrong">{r.context}: </T>
-                    {r.regimen} ({r.source})
-                  </T>
-                ))}
-              </Notice>
+          {templates.length > 0 ? (
+            <Section title="Start from a protocol">
+              {templates.map((t) => (
+                <TemplateOption key={t.id} template={t} selected={templateId === t.id} onPress={() => applyTemplate(t)} />
+              ))}
+              <T variant="small" tone="faint">
+                Fills in the dose, titration, schedule, cycle and end date. Adjust anything below.
+              </T>
             </Section>
           ) : null}
 

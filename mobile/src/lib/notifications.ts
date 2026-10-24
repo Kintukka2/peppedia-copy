@@ -1,8 +1,8 @@
 // Dose reminders. Rather than encoding every schedule shape (titration,
 // cycles, every-N-days) as repeating triggers, the app schedules one-off
 // notifications for the next week of doses and re-syncs whenever protocols or
-// logs change and on every launch. That keeps reminders exact and well under
-// iOS's 64 pending-notification limit.
+// logs change and on every launch. That keeps reminders exact and the number
+// of pending alarms small.
 
 import { addDays } from 'date-fns';
 import * as Notifications from 'expo-notifications';
@@ -18,7 +18,7 @@ const CHANNEL = 'doses';
 const HORIZON_DAYS = 7;
 const MAX_PENDING = 60;
 
-export const remindersSupported = Platform.OS === 'ios' || Platform.OS === 'android';
+export const remindersSupported = Platform.OS === 'android';
 
 let configured = false;
 
@@ -33,12 +33,10 @@ export async function configureNotifications(): Promise<void> {
       shouldShowList: true,
     }),
   });
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL, {
-      name: 'Dose reminders',
-      importance: AndroidImportance.HIGH,
-    });
-  }
+  await Notifications.setNotificationChannelAsync(CHANNEL, {
+    name: 'Dose reminders',
+    importance: AndroidImportance.HIGH,
+  });
 }
 
 export async function requestReminderPermission(): Promise<boolean> {
@@ -46,7 +44,7 @@ export async function requestReminderPermission(): Promise<boolean> {
   await configureNotifications();
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
-  const asked = await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowBadge: false, allowSound: true } });
+  const asked = await Notifications.requestPermissionsAsync();
   return asked.granted;
 }
 

@@ -7,7 +7,7 @@ import { addWeeks, differenceInCalendarDays, format, subDays } from 'date-fns';
 import { BIOMARKER_BY_ID, rangeFor, rangeStatus } from '@/data/biomarkers';
 
 import { ALERT_LABEL, alerts, forecast } from './inventory';
-import type { DoseLog, InventoryItem, JournalEntry, LabResult, Protocol, Sex, VitalEntry, WeightUnit } from './model';
+import type { DoseLog, InventoryItem, JournalEntry, LabResult, Protocol, Sex, VitalEntry, WeightUnit, Workout } from './model';
 import { adherence, doseOn, parseDay } from './schedule';
 import { fromKg, toBase } from './units';
 
@@ -29,6 +29,7 @@ export interface InsightInput {
   vitals: VitalEntry[];
   journal: JournalEntry[];
   labs: LabResult[];
+  workouts?: Workout[];
   sex: Sex;
   weightUnit: WeightUnit;
   now: Date;
@@ -119,12 +120,14 @@ export function buildInsights(input: InsightInput): Insight[] {
           id: `step-${p.id}-${i}`,
           tone: 'attention',
           title: `Symptoms logged after a ${p.name} step-up`,
-          body: `You logged ${symptoms} within three days of moving to step ${i + 1}. This is a timing observation, not a cause; raise persistent symptoms with a clinician.`,
+          body: `You logged ${symptoms} within three days of moving to step ${i + 1}. This is a timing observation, not a cause.`,
           href: '/journal',
         });
       }
     }
   }
+
+  out.push(...activityInsights(input));
 
   // Symptom frequency.
   const recent = journal.filter((j) => new Date(j.date + 'T00:00:00') >= from);
@@ -187,7 +190,7 @@ export function buildInsights(input: InsightInput): Insight[] {
         id: `lab-${r.markerId}`,
         tone: 'attention',
         title: `${marker.name} ${status === 'high' ? 'above' : 'below'} range`,
-        body: `${r.value} ${marker.unit} on ${format(new Date(r.date + 'T00:00:00'), 'd MMM yyyy')}. ${marker.relevance} Discuss out-of-range results with a clinician.`,
+        body: `${r.value} ${marker.unit} on ${format(new Date(r.date + 'T00:00:00'), 'd MMM yyyy')}. ${marker.relevance}`,
         href: '/labs',
       });
     }
@@ -219,6 +222,98 @@ export function buildInsights(input: InsightInput): Insight[] {
 
   const order: InsightTone[] = ['attention', 'neutral', 'positive'];
   return out.sort((a, b) => order.indexOf(a.tone) - order.indexOf(b.tone));
+}
+
+const DAY_MS = 86_400_000;
+
+function dailyAverage(vitals: VitalEntry[], kind: VitalEntry['kind'], from: Date, to: Date): { avg: number; days: number } | null {
+  const vals = vitals.filter((v) => v.kind === kind && new Date(v.at) >= from && new Date(v.at) < to).map((v) => v.value);
+  if (vals.length === 0) return null;
+  return { avg: vals.reduce((a, b) => a + b, 0) / vals.length, days: vals.length };
+}
+
+const thousands = (n: number) => Math.round(n).toLocaleString('en-US');
+
+/** Activity, sleep and heart-rate observations, mostly fed by Health Connect / Google Fit. */
+export function activityInsights({ protocols, vitals, workouts = [], now }: InsightInput): Insight[] {
+  const out: Insight[] = [];
+  const today = parseDay(format(now, 'yyyy-MM-dd'));
+
+  // Steps this week against last week (complete days only).
+  const thisWeek = dailyAverage(vitals, 'steps', subDays(today, 7), today);
+  const lastWeek = dailyAverage(vitals, 'steps', subDays(today, 14), subDays(today, 7));
+  if (thisWeek && thisWeek.days >= 4) {
+    const change = lastWeek && lastWeek.days >= 4 ? (thisWeek.avg - lastWeek.avg) / lastWeek.avg : null;
+    out.push({
+      id: 'steps-week',
+      tone: change !== null && change <= -0.2 ? 'attention' : 'neutral',
+      title: `${thousands(thisWeek.avg)} steps a day this week${change === null ? '' : Math.round(change * 100) === 0 ? ' (same as last week)' : ` (${change > 0 ? '+' : '−'}${Math.abs(Math.round(change * 100))}% vs last week)`}`,
+      body: `Average of ${thisWeek.days} days${lastWeek && lastWeek.days >= 4 ? `; last week averaged ${thousands(lastWeek.avg)}.` : '.'}`,
+      href: '/activity',
+    });
+  }
+
+  // Steps before and since starting each recent protocol.
+  for (const p of protocols.filter((x) => x.status === 'active')) {
+    const start = parseDay(p.startDate);
+    const since = differenceInCalendarDays(today, start);
+    if (since < 7 || since > 90) continue;
+    const before = dailyAverage(vitals, 'steps', subDays(start, 14), start);
+    const after = dailyAverage(vitals, 'steps', start, today);
+    if (!before || !after || before.days < 5 || after.days < 5) continue;
+    const change = (after.avg - before.avg) / before.avg;
+    if (Math.abs(change) < 0.1) continue;
+    out.push({
+      id: `steps-since-${p.id}`,
+      tone: 'neutral',
+      title: `Steps since starting ${p.name}: ${thousands(before.avg)} → ${thousands(after.avg)} a day`,
+      body: `${change >= 0 ? 'Up' : 'Down'} ${Math.abs(Math.round(change * 100))}% comparing the 14 days before ${format(start, 'd MMM')} with the ${since} days since. A timing observation, not a cause.`,
+      href: '/activity',
+    });
+  }
+
+  // Workouts in the last 14 days.
+  const recentWorkouts = workouts.filter((w) => new Date(w.start) >= subDays(now, 14));
+  if (recentWorkouts.length > 0) {
+    const minutes = recentWorkouts.reduce((sum, w) => sum + Math.max(0, (new Date(w.end).getTime() - new Date(w.start).getTime()) / 60_000), 0);
+    out.push({
+      id: 'workouts',
+      tone: 'positive',
+      title: `${recentWorkouts.length} workout${recentWorkouts.length === 1 ? '' : 's'} in 14 days`,
+      body: `${Math.round(minutes)} minutes in total, about ${Math.round(minutes / 2)} a week.`,
+      href: '/activity',
+    });
+  }
+
+  // Sleep over the last week.
+  const sleep = dailyAverage(vitals, 'sleep', subDays(now, 7), new Date(now.getTime() + DAY_MS));
+  if (sleep && sleep.days >= 4) {
+    out.push({
+      id: 'sleep-week',
+      tone: sleep.avg < 6.5 ? 'attention' : 'neutral',
+      title: `Sleep averaged ${sleep.avg.toFixed(1)} h over ${sleep.days} nights`,
+      body: 'From the last seven days of sleep records.',
+      href: '/vitals?kind=sleep',
+    });
+  }
+
+  // Resting heart rate trend (GLP-1 agonists and stimulants commonly nudge it up).
+  const hr = vitals
+    .filter((v) => v.kind === 'restingHr' && new Date(v.at) >= subDays(now, 30))
+    .map((v) => ({ t: new Date(v.at).getTime(), v: v.value }))
+    .sort((a, b) => a.t - b.t);
+  const hrSlope = hr.length >= 5 ? slopePerDay(hr) : null;
+  if (hrSlope !== null && Math.abs(hrSlope * 30) >= 3) {
+    out.push({
+      id: 'resting-hr',
+      tone: hrSlope > 0 ? 'attention' : 'positive',
+      title: `Resting heart rate ${hrSlope > 0 ? 'up' : 'down'} about ${Math.abs(Math.round(hrSlope * 30))} bpm over 30 days`,
+      body: `Fitted across ${hr.length} readings.`,
+      href: '/vitals?kind=restingHr',
+    });
+  }
+
+  return out;
 }
 
 function perWeekCount(p: Protocol): number {

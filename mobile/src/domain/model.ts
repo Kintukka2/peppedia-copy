@@ -55,6 +55,8 @@ export interface Protocol {
   status: ProtocolStatus;
   color: string;
   notes?: string;
+  /** The library protocol template this was started from, if any. */
+  templateId?: string;
   createdAt: string;
 }
 
@@ -126,16 +128,42 @@ export interface Supply {
   perInjection: number;
 }
 
-export type VitalKind = 'weight' | 'bodyFat' | 'restingHr' | 'bloodPressure' | 'sleep' | 'steps' | 'waist';
+export type VitalKind = 'weight' | 'bodyFat' | 'restingHr' | 'bloodPressure' | 'sleep' | 'steps' | 'distance' | 'activeKcal' | 'exerciseMin' | 'waist';
+
+/** Where a record came from. Health Connect carries Google Fit and other Android health apps. */
+export type RecordSource = 'manual' | 'health-connect';
 
 export interface VitalEntry {
   id: ID;
   kind: VitalKind;
-  /** weight kg · bodyFat % · restingHr bpm · bloodPressure systolic mmHg · sleep hours · steps count · waist cm */
+  /**
+   * weight kg · bodyFat % · restingHr bpm · bloodPressure systolic mmHg · sleep hours · waist cm.
+   * Daily totals: steps count · distance km · activeKcal kcal · exerciseMin minutes.
+   */
   value: number;
   /** Diastolic for blood pressure. */
   value2?: number;
   at: string;
+  /** Absent means manual. */
+  source?: RecordSource;
+  /** Stable id from the source, used to update rather than duplicate on re-sync. */
+  externalId?: string;
+}
+
+export interface Workout {
+  id: ID;
+  /** Health Connect exercise type code (see features/health/activity). */
+  type: number;
+  title?: string;
+  start: string;
+  end: string;
+  /** Energy burned during the session, when the source reports it. */
+  kcal?: number;
+  distanceKm?: number;
+  source?: RecordSource;
+  externalId?: string;
+  /** Package of the app that recorded it, e.g. com.google.android.apps.fitness. */
+  origin?: string;
 }
 
 export interface JournalEntry {
@@ -178,5 +206,11 @@ export interface Settings {
   askEndpoint: string;
   /** Optional bearer token for a protected Ask server. */
   askToken: string;
-  acceptedTermsAt?: string;
+  /** Set when the welcome screen is done. */
+  onboardedAt?: string;
+  /** Read activity, vitals and sleep from Health Connect (Google Fit syncs into it). */
+  healthSync: boolean;
+  /** Also write weight, body fat and blood pressure logged in Titra back to Health Connect. */
+  healthWriteBack: boolean;
+  healthLastSync?: string;
 }

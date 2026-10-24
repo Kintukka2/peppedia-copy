@@ -5,7 +5,7 @@ import type { Compound } from './types';
 // - `pk` only where reliable human pharmacokinetic data exist (label or
 //   published human studies). Never estimated.
 // - `studiedRegimens` only from an approved label or a published human trial.
-//   Never community or vendor protocols.
+//   Clinic, community and vendor protocols live in ./protocols, labelled.
 // - Sources are search links (PubMed, ClinicalTrials.gov, DailyMed, EMA, WADA)
 //   rather than specific citations, so nothing is fabricated.
 // Entries are sorted alphabetically by `name`.

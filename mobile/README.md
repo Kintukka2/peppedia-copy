@@ -1,20 +1,28 @@
 # Titra (mobile app)
 
-Evidence-first peptide reference and private protocol log, built with Expo SDK 58, React Native 0.88, Expo Router and TypeScript.
+Peptide reference, labelled protocol library and private tracker for Android, synced with Google Fit through Health Connect. Built with Expo SDK 58, React Native 0.88, Expo Router and TypeScript.
 
 ## Run it
 
 ```bash
 cd mobile
 npm install
-npx expo start          # press i (iOS simulator), a (Android emulator) or w (web)
+npx expo start          # press a (Android device/emulator) or w (web)
 ```
 
-Reminders, Health data, camera and the share sheet need a development build (`npx expo run:ios|android` or `npx eas-cli@latest build --profile development`). Everything else runs in Expo Go and on the web.
+Health Connect (Google Fit sync), reminders, camera and the share sheet need a build of the app, not Expo Go:
+
+```bash
+npx eas-cli@latest build --platform android --profile preview       # installable APK
+npx eas-cli@latest build --platform android --profile development   # APK with the dev client, for npx expo start --dev-client
+npx expo run:android                                                # local build with the Android SDK installed
+```
+
+Everything else runs in Expo Go and on the web.
 
 | Command | What it does |
 |---|---|
-| `npm test` | Jest unit tests for the domain engine and store (calculator, PK, schedules, interactions, inventory, sites, insights, backups) |
+| `npm test` | Jest unit tests: calculator, PK, schedules, interactions, inventory, sites, insights, protocol templates, Health Connect mapping and sync merge, store and backups |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | `expo lint` |
 | `npm run export:web` | Static web build in `dist/` |
@@ -24,10 +32,11 @@ Reminders, Health data, camera and the share sheet need a development build (`np
 ```
 src/
   app/        Expo Router screens (tabs: Today, Library, Protocols, Calculator, More)
-  data/       Library content: compounds, sites, lab reference ranges, types
+  data/       Library content: compounds, protocol templates (labelled by source), sites, lab reference ranges, types
   domain/     Pure logic with tests: calculator, pk, schedule, interactions, inventory, sites, insights, units
   store/      Zustand store persisted to AsyncStorage; rolling snapshots, export/import; sample data
-  lib/        Notifications, Ask client, file sharing, formatting helpers
+  features/   Feature modules: protocols (template cards, conversion), health (Health Connect mapping, sync, activity), inventory
+  lib/        Health Connect bridge, notifications, Ask client, file sharing, formatting helpers
   ui/         Design system: theme tokens, text, layout, controls, charts, syringe gauge, body map
 ```
 

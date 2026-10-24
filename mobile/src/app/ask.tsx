@@ -15,9 +15,9 @@ import { fonts, radius, space, useTheme } from '@/ui/theme';
 const SUGGESTIONS = [
   'How does tirzepatide differ from semaglutide?',
   'What is known about BPC-157 in humans?',
-  'Which compounds have FDA approval?',
+  'What is the community retatrutide titration?',
+  'How do people dose BPC-157 and TB-500 together?',
   'How do I work out units for a 10 mg vial with 2 mL water?',
-  'What are the risks of melanotan II?',
 ];
 
 export default function AskScreen() {
@@ -83,7 +83,7 @@ export default function AskScreen() {
               Ask about any compound
             </T>
             <T tone="soft" style={{ marginBottom: space.lg }}>
-              {endpoint ? 'Answers come from the Titra library via your Ask server.' : 'Answers come from the on-device library. Add an Ask server in Settings for conversational answers.'} Not medical advice.
+              {endpoint ? 'Answers come from Claude via your Ask server, grounded in the library and its labelled protocols.' : 'Answers come from the on-device library. Add an Ask server in Settings for conversational answers.'}
             </T>
             <View style={{ gap: space.sm, alignItems: 'flex-start' }}>
               {SUGGESTIONS.map((s) => (
