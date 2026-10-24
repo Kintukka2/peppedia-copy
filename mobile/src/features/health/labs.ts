@@ -33,6 +33,7 @@ export function rangeBasis(marker: Biomarker, sex: Sex): string {
   const specific = sex === 'male' ? marker.male : sex === 'female' ? marker.female : undefined;
   if (specific) return sex === 'male' ? 'Typical adult range, male' : 'Typical adult range, female';
   if (marker.low !== undefined || marker.high !== undefined) return 'Typical adult range';
+  if (sex !== 'unspecified') return 'No typical range on file for your sex. Add the range from your report.';
   if (marker.male || marker.female) return 'Combined male and female range. Set your sex in Settings for a sex-specific range.';
   return 'No typical range on file';
 }
@@ -56,7 +57,8 @@ const ABOVE = new RegExp(`^(?:>=?|≥|over|above)\\s*${NUM}$`, 'i');
 
 /** Parses a range as printed on a report: "264-916", "< 200", "≥ 40". Blank → {}; unreadable → null. */
 export function parseRange(input: string): { low?: number; high?: number } | null {
-  const s = input.trim().replace(/,/g, '.');
+  // Drop thousands separators ("1,000") first, then read any remaining comma as a decimal point.
+  const s = input.trim().replace(/(\d),(?=\d{3}(?!\d))/g, '$1').replace(/,/g, '.');
   if (!s) return {};
   let m = s.match(BETWEEN);
   if (m) {

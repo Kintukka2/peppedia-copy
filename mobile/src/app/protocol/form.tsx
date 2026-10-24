@@ -13,7 +13,7 @@ import { nextColor, uid, useStore } from '@/store';
 import { Button, Chip, Field, num, NumberField, OptionList, Segmented, ToggleRow } from '@/ui/controls';
 import { Notice } from '@/ui/feedback';
 import { Card, HStack, Screen, Section } from '@/ui/layout';
-import { CompoundPicker, DateField, DATE_RE, DayPicker, TIME_RE, TimeField, UnitPicker } from '@/ui/pickers';
+import { CompoundPicker, DateField, DayPicker, isValidDay, TIME_RE, TimeField, UnitPicker } from '@/ui/pickers';
 import { T } from '@/ui/text';
 import { space, useTheme } from '@/ui/theme';
 
@@ -112,8 +112,8 @@ export default function ProtocolForm() {
       case 'asNeeded':
         schedule = { kind };
     }
-    if (!DATE_RE.test(startDate)) return setError('Start date must be YYYY-MM-DD.');
-    if (endDate && (!DATE_RE.test(endDate) || endDate < startDate)) return setError('End date must be YYYY-MM-DD and after the start.');
+    if (!isValidDay(startDate)) return setError('Start date must be YYYY-MM-DD.');
+    if (endDate && (!isValidDay(endDate) || endDate < startDate)) return setError('End date must be YYYY-MM-DD and after the start.');
     const cycle = useCycle ? { onWeeks: Math.round(num(onWeeks)), offWeeks: Math.round(num(offWeeks)) } : undefined;
     if (cycle && !(cycle.onWeeks > 0 && cycle.offWeeks > 0)) return setError('Cycle weeks must be at least 1.');
 

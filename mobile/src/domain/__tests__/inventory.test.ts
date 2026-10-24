@@ -1,5 +1,5 @@
 import type { InventoryItem, Protocol } from '../model';
-import { alerts, concentration, costPerDose, deduct, drawFor, forecast, monthlyCost, restore, totalRemaining } from '../inventory';
+import { alerts, concentration, costPerDose, deduct, deductTaken, drawFor, forecast, monthlyCost, restore, restoreAmount, totalRemaining } from '../inventory';
 
 function item(over: Partial<InventoryItem> = {}): InventoryItem {
   return {
@@ -52,8 +52,16 @@ describe('deduct', () => {
   it('ignores incompatible units', () => {
     expect(deduct(item(), { value: 5, unit: 'iu' }, now)).toEqual(item());
   });
-  it('restore caps at a full vial', () => {
-    expect(restore(item(), { value: 5, unit: 'mg' }).open!.remaining).toBe(10);
+  it('restore keeps total stock exact, returning overflow as sealed vials', () => {
+    const r = restore(item(), { value: 5, unit: 'mg' });
+    expect(r.open!.remaining).toBe(5);
+    expect(r.unopened).toBe(3);
+    expect(totalRemaining(r)).toBe(totalRemaining(item()) + 5);
+  });
+  it('deductTaken reports a short take when stock runs out', () => {
+    const r = deductTaken(item({ unopened: 0, open: { openedAt: '', remaining: 0.1 } }), { value: 0.25, unit: 'mg' }, now);
+    expect(r.taken).toBeCloseTo(0.1);
+    expect(restoreAmount(r.item, r.taken).open!.remaining).toBeCloseTo(0.1);
   });
 });
 

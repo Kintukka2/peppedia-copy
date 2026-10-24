@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { isInjectable } from '@/domain/sites';
-import { deduct, restore } from '@/domain/inventory';
+import { deductTaken, doseInItemUnit, restoreAmount } from '@/domain/inventory';
 import type {
   DoseLog,
   ID,
@@ -117,11 +117,23 @@ export const useStore = create<Store>()(
         set((s) => {
           let inventory = s.inventory;
           if (!log.skipped && log.inventoryId) {
-            inventory = s.inventory.map((i) => (i.id === log.inventoryId ? deduct(i, log.amount, now) : i));
+            inventory = s.inventory.map((i) => {
+              if (i.id !== log.inventoryId) return i;
+              const r = deductTaken(i, log.amount, now);
+              log.deducted = r.taken;
+              return r.item;
+            });
           }
           let supplies = s.supplies;
           if (!log.skipped && s.settings.deductSupplies && isInjectable(log.route)) {
-            supplies = s.supplies.map((x) => (x.perInjection > 0 ? { ...x, count: Math.max(0, x.count - x.perInjection) } : x));
+            const used: { id: ID; n: number }[] = [];
+            supplies = s.supplies.map((x) => {
+              const n = Math.min(x.count, Math.max(0, Math.round(x.perInjection)));
+              if (n <= 0) return x;
+              used.push({ id: x.id, n });
+              return { ...x, count: x.count - n };
+            });
+            if (used.length) log.suppliesUsed = used;
           }
           return { logs: [...s.logs, log], inventory, supplies };
         });
@@ -132,8 +144,12 @@ export const useStore = create<Store>()(
           const log = s.logs.find((l) => l.id === id);
           if (!log) return {};
           const inventory =
-            !log.skipped && log.inventoryId ? s.inventory.map((i) => (i.id === log.inventoryId ? restore(i, log.amount) : i)) : s.inventory;
-          return { logs: s.logs.filter((l) => l.id !== id), inventory };
+            !log.skipped && log.inventoryId
+              ? s.inventory.map((i) => (i.id === log.inventoryId ? restoreAmount(i, log.deducted ?? doseInItemUnit(i, log.amount) ?? 0) : i))
+              : s.inventory;
+          const back = new Map((log.suppliesUsed ?? []).map((u) => [u.id, u.n]));
+          const supplies = back.size ? s.supplies.map((x) => (back.has(x.id) ? { ...x, count: x.count + back.get(x.id)! } : x)) : s.supplies;
+          return { logs: s.logs.filter((l) => l.id !== id), inventory, supplies };
         }),
 
       upsertInventory: (item) => set((s) => ({ inventory: upsert(s.inventory, item) })),

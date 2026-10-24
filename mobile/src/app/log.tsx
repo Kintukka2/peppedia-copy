@@ -17,7 +17,7 @@ import { BodyMap, type SiteMarker } from '@/ui/body-map';
 import { Button, Chip, Field, num, NumberField, OptionList, Segmented } from '@/ui/controls';
 import { Notice } from '@/ui/feedback';
 import { Card, HStack, Screen, Section } from '@/ui/layout';
-import { CompoundPicker, DATE_RE, DateField, TIME_RE, TimeField, UnitPicker } from '@/ui/pickers';
+import { CompoundPicker, DateField, isValidDay, TIME_RE, TimeField, UnitPicker } from '@/ui/pickers';
 import { SyringeGauge } from '@/ui/syringe';
 import { T } from '@/ui/text';
 import { space } from '@/ui/theme';
@@ -85,7 +85,7 @@ export default function LogScreen() {
   const takenAt = (): Date | null => {
     if (when === 'now') return new Date();
     if (when === 'scheduled' && scheduledFor) return scheduledFor;
-    if (!DATE_RE.test(date) || !TIME_RE.test(time)) return null;
+    if (!isValidDay(date) || !TIME_RE.test(time)) return null;
     return new Date(`${date}T${time.padStart(5, '0')}:00`);
   };
 

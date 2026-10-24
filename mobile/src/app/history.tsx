@@ -45,7 +45,9 @@ export default function HistoryScreen() {
     return list;
   }, [logs, protocols, protocolById]);
 
-  const filtered = useMemo(() => (filter === ALL ? sorted : sorted.filter((l) => (l.protocolId && protocolById.has(l.protocolId) ? l.protocolId : NONE) === filter)), [sorted, filter, protocolById]);
+  // If the selected protocol no longer has logs (e.g. its last one was deleted), fall back to All.
+  const active = filter !== ALL && filters.some((f) => f.id === filter) ? filter : ALL;
+  const filtered = useMemo(() => (active === ALL ? sorted : sorted.filter((l) => (l.protocolId && protocolById.has(l.protocolId) ? l.protocolId : NONE) === active)), [sorted, active, protocolById]);
 
   const days = useMemo(() => {
     const out: { key: string; logs: DoseLog[] }[] = [];
@@ -79,9 +81,9 @@ export default function HistoryScreen() {
         <>
           {filters.length > 1 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} contentContainerStyle={styles.chipsContent}>
-              <Chip label="All" selected={filter === ALL} onPress={() => pickFilter(ALL)} />
+              <Chip label="All" selected={active === ALL} onPress={() => pickFilter(ALL)} />
               {filters.map((f) => (
-                <Chip key={f.id} label={f.label} selected={filter === f.id} onPress={() => pickFilter(f.id)} icon={f.color ? <Dot color={f.color} size={8} /> : undefined} />
+                <Chip key={f.id} label={f.label} selected={active === f.id} onPress={() => pickFilter(f.id)} icon={f.color ? <Dot color={f.color} size={8} /> : undefined} />
               ))}
             </ScrollView>
           ) : null}

@@ -2,13 +2,13 @@
 // what was logged (adherence, trends, timing of symptoms). They never claim a
 // compound caused an outcome and never suggest changing a dose.
 
-import { differenceInCalendarDays, format, subDays } from 'date-fns';
+import { addWeeks, differenceInCalendarDays, format, subDays } from 'date-fns';
 
 import { BIOMARKER_BY_ID, rangeFor, rangeStatus } from '@/data/biomarkers';
 
 import { ALERT_LABEL, alerts, forecast } from './inventory';
 import type { DoseLog, InventoryItem, JournalEntry, LabResult, Protocol, Sex, VitalEntry, WeightUnit } from './model';
-import { adherence, doseOn } from './schedule';
+import { adherence, doseOn, parseDay } from './schedule';
 import { fromKg, toBase } from './units';
 
 export type InsightTone = 'positive' | 'neutral' | 'attention';
@@ -107,7 +107,7 @@ export function buildInsights(input: InsightInput): Insight[] {
     let weekStart = 0;
     for (let i = 1; i < p.titration.length; i++) {
       weekStart += p.titration[i - 1].weeks;
-      const stepDay = new Date(new Date(p.startDate + 'T00:00:00').getTime() + weekStart * 7 * 86_400_000);
+      const stepDay = addWeeks(parseDay(p.startDate), weekStart);
       if (stepDay < from || stepDay > now) continue;
       const near = journal.filter((j) => {
         const d = differenceInCalendarDays(new Date(j.date + 'T00:00:00'), stepDay);

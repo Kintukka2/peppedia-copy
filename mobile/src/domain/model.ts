@@ -73,6 +73,9 @@ export interface DoseLog {
   volumeMl?: number;
   skipped?: boolean;
   notes?: string;
+  /** What this log actually removed from stock, so deleting it can reverse exactly that. */
+  deducted?: number;
+  suppliesUsed?: { id: ID; n: number }[];
 }
 
 export type InventoryForm = 'powder' | 'solution' | 'oil' | 'oral';

@@ -60,8 +60,13 @@ export function totalRemaining(item: InventoryItem): number {
  * out (or none is open). Returns a new item; never goes below zero.
  */
 export function deduct(item: InventoryItem, dose: Amount, now: Date): InventoryItem {
+  return deductTaken(item, dose, now).item;
+}
+
+/** Like `deduct`, but also reports how much was actually taken (less than the dose when stock runs out). */
+export function deductTaken(item: InventoryItem, dose: Amount, now: Date): { item: InventoryItem; taken: number } {
   const amount = doseInItemUnit(item, dose);
-  if (amount === null || amount <= 0) return item;
+  if (amount === null || amount <= 0) return { item, taken: 0 };
   const size = perVial(item).value;
   let open = item.open ? { ...item.open } : undefined;
   let unopened = item.unopened;
@@ -81,15 +86,30 @@ export function deduct(item: InventoryItem, dose: Amount, now: Date): InventoryI
     open.remaining -= take;
     need -= take;
   }
+  return { item: { ...item, unopened, open }, taken: amount - Math.max(0, need) };
+}
+
+/**
+ * Puts an amount back into stock (used when a log is deleted). Total stock is
+ * restored exactly: anything beyond a full open vial returns as sealed vials.
+ */
+export function restoreAmount(item: InventoryItem, amount: number): InventoryItem {
+  if (!(amount > 0)) return item;
+  const size = perVial(item).value;
+  let remaining = (item.open?.remaining ?? 0) + amount;
+  let unopened = item.unopened;
+  while (size > 0 && remaining > size + 1e-9) {
+    remaining -= size;
+    unopened += 1;
+  }
+  const open = item.open ? { ...item.open, remaining } : { openedAt: new Date().toISOString(), remaining };
   return { ...item, unopened, open };
 }
 
-/** Restores a dose to the open vial (used when a log is deleted). */
+/** Restores a whole dose; prefer `restoreAmount` with the amount a log recorded as taken. */
 export function restore(item: InventoryItem, dose: Amount): InventoryItem {
   const amount = doseInItemUnit(item, dose);
-  if (amount === null || amount <= 0 || !item.open) return item;
-  const size = perVial(item).value;
-  return { ...item, open: { ...item.open, remaining: Math.min(size, item.open.remaining + amount) } };
+  return amount === null ? item : restoreAmount(item, amount);
 }
 
 export interface Forecast {

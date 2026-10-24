@@ -11,7 +11,7 @@ import { useStore } from '@/store';
 import { Button, Chip, Field, num, NumberField } from '@/ui/controls';
 import { Notice } from '@/ui/feedback';
 import { Card, HStack, Screen, Section } from '@/ui/layout';
-import { DATE_RE, DateField } from '@/ui/pickers';
+import { isValidDay, DateField } from '@/ui/pickers';
 import { T } from '@/ui/text';
 import { space, useTheme } from '@/ui/theme';
 
@@ -50,7 +50,7 @@ export default function AddLabs() {
 
   const save = () => {
     setError(null);
-    if (!DATE_RE.test(date) || Number.isNaN(new Date(date + 'T00:00:00').getTime())) return setError('Date must be YYYY-MM-DD.');
+    if (!isValidDay(date)) return setError('Date must be a real date in YYYY-MM-DD.');
     if (date > format(new Date(), 'yyyy-MM-dd')) return setError('The date is in the future.');
     if (rows.length === 0) return setError('Add at least one marker.');
     const out: Omit<LabResult, 'id'>[] = [];

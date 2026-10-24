@@ -14,7 +14,7 @@ import { uid, useStore } from '@/store';
 import { Button, Chip, Field, num, NumberField, Segmented } from '@/ui/controls';
 import { Notice } from '@/ui/feedback';
 import { Card, HStack, Screen, Section } from '@/ui/layout';
-import { CompoundPicker, DateField, DATE_RE } from '@/ui/pickers';
+import { CompoundPicker, DateField, isValidDay } from '@/ui/pickers';
 import { T } from '@/ui/text';
 import { space, useTheme } from '@/ui/theme';
 
@@ -64,7 +64,7 @@ function defaultUnit(compound: Compound | null): AmountUnit {
 }
 
 function validDate(s: string): boolean {
-  return DATE_RE.test(s) && !Number.isNaN(new Date(s + 'T00:00:00').getTime());
+  return isValidDay(s);
 }
 
 function initialDrafts(existing: InventoryItem | undefined, params: Params): Draft[] {
@@ -142,6 +142,20 @@ export default function InventoryFormScreen() {
   const primaryCompound = getCompound(primary.compoundId);
   const liquid = form === 'solution' || form === 'oil';
   const perMl = liquid && basis === 'ml';
+  // Switching between "per mL" and "per vial" re-expresses the typed amounts instead of reinterpreting them.
+  const changeBasis = (next: Basis) => {
+    if (next === basis) return;
+    const vol = num(vialMl);
+    if (vol > 0) {
+      setDrafts((ds) =>
+        ds.map((d) => {
+          const v = num(d.amount);
+          return v > 0 ? { ...d, amount: trim(next === 'ml' ? v / vol : v * vol, 6) } : d;
+        }),
+      );
+    }
+    setBasis(next);
+  };
   const oral = form === 'oral';
   const suggested = suggestName(form, drafts, perMl, num(vialMl));
   const displayName = nameTouched ? name : suggested || name;
@@ -278,7 +292,7 @@ export default function InventoryFormScreen() {
                 </T>
                 <Segmented
                   value={basis}
-                  onChange={setBasis}
+                  onChange={changeBasis}
                   options={[
                     { value: 'vial', label: 'Total in the vial' },
                     { value: 'ml', label: 'Amount per mL' },

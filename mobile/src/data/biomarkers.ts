@@ -68,6 +68,8 @@ export function rangeFor(marker: Biomarker, sex: 'male' | 'female' | 'unspecifie
   const specific = sex === 'male' ? marker.male : sex === 'female' ? marker.female : undefined;
   if (specific) return specific;
   if (marker.low !== undefined || marker.high !== undefined) return { low: marker.low, high: marker.high };
+  // A sex is set but this marker only has a range for the other sex: no typical range applies.
+  if (sex !== 'unspecified') return {};
   // Unspecified sex with only sex-specific ranges: use the widest envelope.
   const lows = [marker.male?.low, marker.female?.low].filter((v): v is number => v !== undefined);
   const highs = [marker.male?.high, marker.female?.high].filter((v): v is number => v !== undefined);

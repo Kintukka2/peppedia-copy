@@ -9,7 +9,7 @@ import { useStore } from '@/store';
 import { Button, Chip, num, NumberField } from '@/ui/controls';
 import { Notice } from '@/ui/feedback';
 import { HStack, Screen, Section } from '@/ui/layout';
-import { DATE_RE, DateField, TIME_RE, TimeField } from '@/ui/pickers';
+import { DateField, isValidDay, TIME_RE, TimeField } from '@/ui/pickers';
 
 export default function AddVital() {
   const params = useLocalSearchParams<{ kind?: string }>();
@@ -57,7 +57,7 @@ export default function AddVital() {
       if (stored2 >= stored) return setError('Diastolic should be lower than systolic. Check the order.');
     }
 
-    if (!DATE_RE.test(date)) return setError('Date must be YYYY-MM-DD.');
+    if (!isValidDay(date)) return setError('Date must be a real date in YYYY-MM-DD.');
     if (!TIME_RE.test(time)) return setError('Time must be HH:MM.');
     const at = atLocal(date, time);
     if (Number.isNaN(at.getTime())) return setError('Enter a valid date.');

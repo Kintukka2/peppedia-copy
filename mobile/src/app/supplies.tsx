@@ -42,7 +42,7 @@ function parse(d: Draft): { value: Omit<Supply, 'id'> } | { error: string } {
   const perInjection = num(d.perInjection || '0');
   if (!(count >= 0) || !Number.isInteger(count)) return { error: 'Count must be a whole number.' };
   if (!(lowStockAt >= 0) || !Number.isInteger(lowStockAt)) return { error: 'The low-stock alert must be a whole number.' };
-  if (!(perInjection >= 0)) return { error: 'Used per injection must be 0 or more.' };
+  if (!(perInjection >= 0) || !Number.isInteger(perInjection)) return { error: 'Used per injection must be a whole number (0 or more).' };
   return { value: { name, count, lowStockAt, perInjection } };
 }
 

@@ -29,6 +29,29 @@ describe('logging', () => {
     expect(getData().inventory.find((i) => i.id === inv.id)!.open!.remaining).toBe(before);
   });
 
+  it('deleting a log reverses exactly what it took, including a new vial and supplies', () => {
+    const sample = buildSample(new Date('2026-03-01T12:00:00'));
+    const vial = { ...sample.inventory.find((i) => i.form === 'powder')!, unopened: 1, open: { openedAt: '2026-02-01T00:00:00.000Z', remaining: 100, diluentMl: 5 } };
+    useStore.getState().replaceAll({ ...sample, inventory: [vial] });
+    const before = { open: 100, unopened: 1, supplies: getData().supplies.map((x) => x.count) };
+    const log = useStore.getState().logDose({ compoundId: 'hcg', name: 'hCG', takenAt: new Date().toISOString(), amount: { value: 500, unit: 'iu' }, route: 'subq', inventoryId: vial.id });
+    expect(getData().inventory[0].unopened).toBe(0);
+    useStore.getState().deleteLog(log.id);
+    const after = getData().inventory[0];
+    expect(after.open!.remaining + after.unopened * 5000).toBe(before.open + before.unopened * 5000);
+    expect(getData().supplies.map((x) => x.count)).toEqual(before.supplies);
+  });
+
+  it('deleting a log that ran stock dry does not create phantom stock', () => {
+    const sample = buildSample(new Date('2026-03-01T12:00:00'));
+    const vial = { ...sample.inventory.find((i) => i.form === 'powder')!, unopened: 0, open: { openedAt: '2026-02-01T00:00:00.000Z', remaining: 100, diluentMl: 5 } };
+    useStore.getState().replaceAll({ ...sample, inventory: [vial] });
+    const log = useStore.getState().logDose({ compoundId: 'hcg', name: 'hCG', takenAt: new Date().toISOString(), amount: { value: 500, unit: 'iu' }, route: 'subq', inventoryId: vial.id });
+    expect(log.deducted).toBe(100);
+    useStore.getState().deleteLog(log.id);
+    expect(getData().inventory[0].open!.remaining).toBe(100);
+  });
+
   it('skipped doses do not deduct', () => {
     useStore.getState().replaceAll(buildSample(new Date('2026-03-01T12:00:00')));
     const inv = getData().inventory[0];

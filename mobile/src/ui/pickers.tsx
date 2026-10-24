@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { CATEGORY_LABEL, COMPOUND_BY_ID, searchCompounds } from '@/data/library';
 import type { Compound } from '@/data/types';
 import type { AmountUnit } from '@/domain/model';
+import { DATE_RE, isValidDay } from '@/domain/schedule';
 import { useStore } from '@/store';
 
 import { Chip, Field, Segmented, tap } from './controls';
@@ -44,7 +45,7 @@ export function DayPicker({ value, onChange }: { value: number[]; onChange: (day
 }
 
 export const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
-export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+export { DATE_RE, isValidDay };
 
 export function TimeField({ label, value, onChange }: { label?: string; value: string; onChange: (s: string) => void }) {
   return <Field label={label} value={value} onChangeText={onChange} placeholder="08:00" keyboardType="numbers-and-punctuation" error={value && !TIME_RE.test(value) ? 'Use 24-hour HH:MM' : undefined} />;
@@ -52,7 +53,7 @@ export function TimeField({ label, value, onChange }: { label?: string; value: s
 
 export function DateField({ label, value, onChange, optional, future = true }: { label: string; value: string; onChange: (s: string) => void; optional?: boolean; future?: boolean }) {
   const today = format(new Date(), 'yyyy-MM-dd');
-  const valid = !value || (DATE_RE.test(value) && !Number.isNaN(new Date(value + 'T00:00:00').getTime()));
+  const valid = !value || isValidDay(value);
   return (
     <View>
       <Field

@@ -15,6 +15,13 @@ export function dayKey(date: Date): string {
   return format(date, 'yyyy-MM-dd');
 }
 
+export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A real calendar day in `YYYY-MM-DD` (rejects 2026-02-31, which `Date` silently rolls over). */
+export function isValidDay(s: string): boolean {
+  return DATE_RE.test(s) && dayKey(parseDay(s)) === s;
+}
+
 function atTime(day: Date, time: ClockTime): Date {
   const [h, m] = time.split(':').map(Number);
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h || 0, m || 0);
