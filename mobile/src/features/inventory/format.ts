@@ -2,11 +2,20 @@ import { COMPOUNDS } from '@/data/library';
 import type { Compound } from '@/data/types';
 import type { StockAlert } from '@/domain/inventory';
 import { concentration, perVial, totalRemaining } from '@/domain/inventory';
-import type { Amount, InventoryForm, InventoryItem, Protocol } from '@/domain/model';
+import type { Amount, InventoryForm, InventoryItem, Protocol, SyringeId } from '@/domain/model';
 import { formatAmount, trim } from '@/domain/units';
 import type { BadgeTone } from '@/ui/feedback';
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+/** Short syringe names for chips. */
+export const SYRINGE_SHORT: Record<SyringeId, string> = {
+  'u100-30': '30 units',
+  'u100-50': '50 units',
+  'u100-100': '100 units',
+  'ml-1': '1 mL',
+  'ml-3': '3 mL',
+};
 
 export const FORM_LABEL: Record<InventoryForm, string> = {
   powder: 'Powder',

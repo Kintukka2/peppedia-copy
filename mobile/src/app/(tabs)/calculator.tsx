@@ -8,24 +8,16 @@ import type { AmountUnit, SyringeId } from '@/domain/model';
 import { doseOn } from '@/domain/schedule';
 import { convertAmount, formatAmount, SYRINGES, trim, UNITS_PER_ML } from '@/domain/units';
 import { unitsText } from '@/features/inventory/format';
-import { AmountInput, QuickChips } from '@/features/inventory/ui';
+import { AmountInput, DrawReadout, QuickChips, SyringeChips } from '@/features/inventory/ui';
 import { useStore } from '@/store';
 import { Button, Chip, Field, num, NumberField, Segmented } from '@/ui/controls';
 import { Dot, Notice, Stat } from '@/ui/feedback';
 import { Card, Gap, HStack, IconButton, Screen, Section } from '@/ui/layout';
-import { SyringeGauge } from '@/ui/syringe';
 import { T } from '@/ui/text';
 import { space, useTheme } from '@/ui/theme';
 
 type Mode = 'reconstitute' | 'premixed' | 'oil' | 'blend';
 
-const SYRINGE_SHORT: Record<SyringeId, string> = {
-  'u100-30': '30 units',
-  'u100-50': '50 units',
-  'u100-100': '100 units',
-  'ml-1': '1 mL',
-  'ml-3': '3 mL',
-};
 
 const VIAL_MG = [2, 5, 10, 15, 30];
 const WATER_ML = [1, 2, 3, 5];
@@ -52,31 +44,6 @@ function Warnings({ list }: { list: string[] }) {
           {w}
         </Notice>
       ))}
-    </View>
-  );
-}
-
-/** Headline draw in the syringe's own scale plus the gauge. */
-function DrawReadout({ volumeMl, syringe, active }: { volumeMl: number; syringe: SyringeId; active: boolean }) {
-  const spec = SYRINGES[syringe];
-  const units = volumeMl * UNITS_PER_ML;
-  const byUnits = spec.scale === 'units';
-  return (
-    <View style={{ marginTop: space.lg }}>
-      <HStack gap={6} wrap style={{ alignItems: 'baseline' }}>
-        <T tone="soft">Draw</T>
-        <T variant="title" tabular>
-          {byUnits ? unitsText(units) : `${trim(volumeMl, 2)} mL`}
-        </T>
-        <T tone="soft" tabular>
-          {byUnits ? `${trim(volumeMl, 3)} mL` : `${unitsText(units)} on a U-100 scale`}
-        </T>
-      </HStack>
-      <Gap size={space.sm} />
-      {active ? <SyringeGauge volumeMl={volumeMl} syringe={syringe} /> : null}
-      <T variant="small" tone="faint">
-        {spec.label}
-      </T>
     </View>
   );
 }
@@ -504,11 +471,7 @@ export default function CalculatorScreen() {
 
   const picker = (
     <Section title="Syringe">
-      <HStack wrap>
-        {(Object.keys(SYRINGES) as SyringeId[]).map((id) => (
-          <Chip key={id} label={SYRINGE_SHORT[id]} selected={syringe === id} onPress={() => setSyringe(id)} />
-        ))}
-      </HStack>
+      <SyringeChips value={syringe} onChange={setSyringe} />
     </Section>
   );
 

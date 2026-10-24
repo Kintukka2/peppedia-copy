@@ -51,6 +51,10 @@ export interface Protocol {
   startDate: string;
   endDate?: string;
   inventoryId?: ID;
+  /** How the dose is drawn up when no inventory vial is linked (or the linked one has no concentration). */
+  mix?: ProtocolMix;
+  /** Syringe used for this protocol; falls back to the default in Settings. */
+  syringe?: SyringeId;
   reminders: boolean;
   status: ProtocolStatus;
   color: string;
@@ -58,6 +62,21 @@ export interface Protocol {
   /** The library protocol template this was started from, if any. */
   templateId?: string;
   createdAt: string;
+}
+
+/** A vial described on the protocol itself, so every dose shows its draw. */
+export interface ProtocolMix {
+  /** Powder mixed with water, or a liquid with a fixed strength (solution or oil). */
+  form: 'powder' | 'liquid';
+  /**
+   * Amount per vial (powder) or per mL (liquid) of each compound. The first is
+   * the one the dose is set in; the rest come along in proportion (blends).
+   */
+  components: VialComponent[];
+  /** Water added to a powder vial. */
+  diluentMl?: number;
+  /** Liquid in one vial, for doses-per-vial. */
+  vialMl?: number;
 }
 
 export interface DoseLog {

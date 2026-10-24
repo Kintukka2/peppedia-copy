@@ -8,9 +8,12 @@ import { getCompound, ROUTE_LABEL } from '@/data/library';
 import { TEMPLATE_BY_ID, templatesFor } from '@/data/protocols';
 import type { Compound, ProtocolTemplate, Route } from '@/data/types';
 import { doseInItemUnit } from '@/domain/inventory';
-import type { AmountUnit, Protocol, Schedule, TitrationStep } from '@/domain/model';
+import type { Amount, AmountUnit, Protocol, Schedule, SyringeId, TitrationStep } from '@/domain/model';
+import { isInjectable } from '@/domain/sites';
 import { TemplateOption } from '@/features/protocols/components';
-import { endDateFor, protocolName } from '@/features/protocols/templates';
+import { draftFromMix, inventoryFromMix, mixFromDraft, withPrimary, type MixDraft } from '@/features/protocols/mix';
+import { doseScaleWarning, endDateFor, mixFromTemplate, protocolName } from '@/features/protocols/templates';
+import { VialSection } from '@/features/protocols/vial';
 import { requestReminderPermission } from '@/lib/notifications';
 import { nextColor, uid, useStore } from '@/store';
 import { Button, Chip, Field, num, NumberField, OptionList, Segmented, ToggleRow } from '@/ui/controls';
@@ -66,6 +69,8 @@ export default function ProtocolForm() {
   const upsertProtocol = useStore((s) => s.upsertProtocol);
   const deleteProtocol = useStore((s) => s.deleteProtocol);
   const remindersEnabled = useStore((s) => s.settings.remindersEnabled);
+  const defaultSyringe = useStore((s) => s.settings.syringe);
+  const upsertInventory = useStore((s) => s.upsertInventory);
 
   const initialTemplate = existing ? undefined : TEMPLATE_BY_ID[params.templateId ?? ''];
   const initialCompound = getCompound(existing?.compoundId ?? initialTemplate?.components[0].compoundId ?? params.compoundId);
@@ -91,6 +96,12 @@ export default function ProtocolForm() {
   const [startDate, setStartDate] = useState(existing?.startDate ?? today);
   const [endDate, setEndDate] = useState(existing?.endDate ?? seed?.endDate ?? '');
   const [inventoryId, setInventoryId] = useState<string>(existing?.inventoryId ?? '');
+  const [mixDraft, setMixDraft] = useState<MixDraft>(() =>
+    draftFromMix(existing?.mix ?? (initialTemplate ? mixFromTemplate(initialTemplate) : undefined), existing?.name ?? seed?.name ?? initialCompound?.name ?? '', initialCompound?.id ?? null, existing?.dose.unit ?? seed?.unit ?? 'mg'),
+  );
+  const [syringe, setSyringe] = useState<SyringeId>(existing?.syringe ?? defaultSyringe);
+  const [addToInventory, setAddToInventory] = useState(false);
+  const [vials, setVials] = useState(1);
   const [reminders, setReminders] = useState(existing?.reminders ?? true);
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +127,8 @@ export default function ProtocolForm() {
     setOnWeeks(d.onWeeks);
     setOffWeeks(d.offWeeks);
     setEndDate(d.endDate);
+    const blend = mixFromTemplate(t);
+    if (blend) setMixDraft(draftFromMix(blend, d.name, compound?.id ?? null, d.unit));
   };
 
   const routes = compound?.routes.length ? compound.routes : ALL_ROUTES;
@@ -129,12 +142,19 @@ export default function ProtocolForm() {
     setCompound(picked);
     setTemplateId(undefined);
     setName(picked.name);
-    setRoute(picked.routes[0] ?? 'subq');
+    setMixDraft(withPrimary(mixDraft, picked.name, picked.id));
     const typical = templatesFor(picked.id)[0];
+    // The route people actually use comes from the compound's protocols, not the library's route order.
+    setRoute(typical && picked.routes.includes(typical.route) ? typical.route : (picked.routes[0] ?? 'subq'));
     if (typical) setUnit(typical.components.find((x) => x.compoundId === picked.id)?.dose.unit ?? typical.components[0].dose.unit);
     else if (picked.classes.includes('gonadotropin') || picked.id === 'somatropin') setUnit('iu');
     setPicking(false);
   };
+
+  // Doses the vial readout shows: the single dose, or every titration step.
+  const plannedDoses: Amount[] = useTitration ? steps.map((s) => ({ value: num(s.dose), unit })) : [{ value: num(dose), unit }];
+  const scaleWarning = doseScaleWarning(compound?.id ?? null, name, plannedDoses.find((d) => d.value > 0) ?? { value: 0, unit });
+  const perDay = kind === 'daily' ? times.length : kind === 'weekdays' ? days.length / 7 : kind === 'everyNDays' ? 1 / Math.max(1, num(everyN) || 1) : 0;
 
   const save = async () => {
     setError(null);
@@ -173,6 +193,15 @@ export default function ProtocolForm() {
     const cycle = useCycle ? { onWeeks: Math.round(num(onWeeks)), offWeeks: Math.round(num(offWeeks)) } : undefined;
     if (cycle && !(cycle.onWeeks > 0 && cycle.offWeeks > 0)) return setError('Cycle weeks must be at least 1.');
 
+    const mix = isInjectable(route) ? mixFromDraft(mixDraft) : existing?.mix;
+    let linkedId = inventoryId || undefined;
+    if (!linkedId && addToInventory && mix && isInjectable(route)) {
+      const item = inventoryFromMix(mix, { id: uid(), vials, route, now: new Date() });
+      if (!item) return setError(mix.form === 'powder' ? 'Enter the water added to put this vial in inventory.' : 'Enter the vial volume to put this vial in inventory.');
+      upsertInventory(item);
+      linkedId = item.id;
+    }
+
     const p: Protocol = {
       id: existing?.id ?? uid(),
       compoundId: compound?.id ?? null,
@@ -184,7 +213,9 @@ export default function ProtocolForm() {
       cycle,
       startDate,
       endDate: endDate || undefined,
-      inventoryId: inventoryId || undefined,
+      inventoryId: linkedId,
+      mix,
+      syringe,
       reminders,
       status: existing?.status ?? 'active',
       color: existing?.color ?? nextColor(protocols),
@@ -207,6 +238,7 @@ export default function ProtocolForm() {
               setCompound(null);
               setTemplateId(undefined);
               setName(n);
+              setMixDraft(withPrimary(mixDraft, n, null));
               setPicking(false);
             }}
           />
@@ -272,7 +304,39 @@ export default function ProtocolForm() {
                 <Button title="Add step" kind="ghost" small icon={<Plus size={16} color={c.accent} />} onPress={() => setSteps([...steps, { weeks: '4', dose: '' }])} style={{ alignSelf: 'flex-start' }} />
               </View>
             ) : null}
+            {scaleWarning ? (
+              <View style={{ marginTop: space.md }}>
+                <Notice tone="warn">{scaleWarning}</Notice>
+              </View>
+            ) : null}
           </Section>
+
+          {isInjectable(route) ? (
+            <VialSection
+              doses={plannedDoses}
+              draft={mixDraft}
+              onDraft={setMixDraft}
+              inventory={inventory}
+              compatible={compatibleInventory}
+              inventoryId={inventoryId}
+              onInventory={setInventoryId}
+              syringe={syringe}
+              onSyringe={setSyringe}
+              addToInventory={addToInventory}
+              onAddToInventory={setAddToInventory}
+              vials={vials}
+              onVials={setVials}
+              perDay={perDay}
+            />
+          ) : compatibleInventory.length > 0 ? (
+            <Section title="Inventory">
+              <OptionList
+                value={inventoryId}
+                onChange={setInventoryId}
+                options={[{ value: '', label: 'Not linked' }, ...compatibleInventory.map((i) => ({ value: i.id, label: i.name, hint: [i.vendor, i.batch].filter(Boolean).join(' · ') || undefined }))]}
+              />
+            </Section>
+          ) : null}
 
           <Section title="Schedule">
             <Segmented
@@ -333,18 +397,6 @@ export default function ProtocolForm() {
           <Section title="Dates">
             <DateField label="Start" value={startDate} onChange={setStartDate} />
             <DateField label="End" value={endDate} onChange={setEndDate} optional />
-          </Section>
-
-          <Section title="Inventory">
-            {compatibleInventory.length === 0 ? (
-              <T tone="soft">Add a vial in Inventory to have doses deducted automatically and see when it runs out.</T>
-            ) : (
-              <OptionList
-                value={inventoryId}
-                onChange={setInventoryId}
-                options={[{ value: '', label: 'Not linked' }, ...compatibleInventory.map((i) => ({ value: i.id, label: i.name, hint: [i.vendor, i.batch].filter(Boolean).join(' · ') || undefined }))]}
-              />
-            )}
           </Section>
 
           <Section title="Reminders & notes">
