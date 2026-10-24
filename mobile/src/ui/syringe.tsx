@@ -18,7 +18,7 @@ export function SyringeGauge({ volumeMl, syringe, height = 64 }: { volumeMl: num
   const over = value > max;
   const pad = 10;
   const barrelX = pad;
-  const barrelW = w - pad * 2 - 18;
+  const barrelW = Math.max(0, w - pad * 2 - 18);
   const barrelY = 8;
   const barrelH = height - 30;
   const fillW = Math.max(0, Math.min(1, value / max)) * barrelW;
@@ -28,6 +28,7 @@ export function SyringeGauge({ volumeMl, syringe, height = 64 }: { volumeMl: num
   const ticks: { x: number; major: boolean; label?: string }[] = [];
   for (let v = 0; v <= max + 1e-9; v += minor) {
     const isMajor = Math.abs(v / major - Math.round(v / major)) < 1e-6;
+    if (barrelW <= 0) break;
     ticks.push({ x: barrelX + (v / max) * barrelW, major: isMajor, label: isMajor ? (units ? String(Math.round(v)) : v.toFixed(1)) : undefined });
   }
 

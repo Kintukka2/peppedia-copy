@@ -5,7 +5,7 @@
 import { addDays, differenceInCalendarDays } from 'date-fns';
 
 import type { Amount, InventoryItem, Protocol } from './model';
-import { doseOn, dosesPerDay } from './schedule';
+import { doseOn, dosesPerDay, parseDay } from './schedule';
 import { toBase, UNITS_PER_ML } from './units';
 
 export function primary(item: InventoryItem) {
@@ -139,7 +139,7 @@ export type StockAlert = 'expired' | 'expiring' | 'low' | 'empty' | 'old-reconst
 export function alerts(item: InventoryItem, now: Date): StockAlert[] {
   const out: StockAlert[] = [];
   if (item.expiresAt) {
-    const days = differenceInCalendarDays(new Date(item.expiresAt), now);
+    const days = differenceInCalendarDays(parseDay(item.expiresAt), now);
     if (days < 0) out.push('expired');
     else if (days <= 30) out.push('expiring');
   }

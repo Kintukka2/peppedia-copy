@@ -16,7 +16,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.inkFaint,
-        tabBarStyle: { backgroundColor: c.surface, borderTopColor: c.border, ...(Platform.OS === 'web' ? { height: 64, paddingTop: 6, paddingBottom: 8 } : null) },
+        tabBarStyle: { backgroundColor: c.surface, borderTopColor: c.border, ...(Platform.OS === 'web' ? { height: 68, paddingTop: 6, paddingBottom: 12 } : null) },
         tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14 },
         sceneStyle: { backgroundColor: c.bg },
       }}>
