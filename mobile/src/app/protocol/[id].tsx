@@ -5,11 +5,13 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 
 import { getCompound, ROUTE_LABEL } from '@/data/library';
+import { TEMPLATE_BY_ID } from '@/data/protocols';
 import { SITE_BY_ID } from '@/data/sites';
 import { forecast } from '@/domain/inventory';
 import { clearsAt, paramsFor, sampleSeries } from '@/domain/pk';
 import { adherence, describeSchedule, doseOn, nextDose, parseDay, titrationStepOn } from '@/domain/schedule';
 import { formatAmount, toBase } from '@/domain/units';
+import { TemplateCard } from '@/features/protocols/components';
 import { whenLabel } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
 import { useStore } from '@/store';
@@ -172,6 +174,11 @@ export default function ProtocolDetail() {
       {p.notes ? (
         <Section title="Notes">
           <T>{p.notes}</T>
+        </Section>
+      ) : null}
+      {p.templateId && TEMPLATE_BY_ID[p.templateId] ? (
+        <Section title="Started from">
+          <TemplateCard template={TEMPLATE_BY_ID[p.templateId]} showCompounds />
         </Section>
       ) : null}
       {p.cycle ? (

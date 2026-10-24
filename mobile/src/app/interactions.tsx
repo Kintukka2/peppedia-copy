@@ -1,10 +1,14 @@
+import { router } from 'expo-router';
 import { ChevronDown, ChevronUp, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { getCompound } from '@/data/library';
+import { SOURCE_LABEL, stacksWith } from '@/data/protocols';
 import type { Compound } from '@/data/types';
 import { checkStack, LEVEL_LABEL, LEVEL_ORDER, type StackItem } from '@/domain/interactions';
+import { SourceBadge } from '@/features/protocols/components';
+import { summaryLine } from '@/features/protocols/templates';
 import { useStore } from '@/store';
 import { Button, Chip } from '@/ui/controls';
 import { Badge, EmptyState, LEVEL_TONE, Notice } from '@/ui/feedback';
@@ -45,7 +49,7 @@ export default function InteractionsScreen() {
   return (
     <Screen back title="Stack check">
       <T tone="soft" style={{ marginBottom: space.lg }}>
-        Every pair in your active protocols is checked against mechanism-based rules: shared receptors, additive effects and combinations that have been studied.
+        Every pair in your active protocols is checked against mechanism-based rules (shared receptors, additive effects, combinations studied in trials) and matched against named stacks and blends from clinics, the community and vendors.
       </T>
 
       <Section title="Stack" action={<Button title={adding ? 'Done' : 'Try adding one'} kind="ghost" small onPress={() => setAdding(!adding)} />}>
@@ -82,6 +86,7 @@ export default function InteractionsScreen() {
           {pairs.map((p) => {
             const key = (p.a.compound?.id ?? p.a.name) + '|' + (p.b.compound?.id ?? p.b.name);
             const expanded = open === key;
+            const named = p.a.compound && p.b.compound ? stacksWith(p.a.compound.id, p.b.compound.id) : [];
             return (
               <Card key={key} style={{ marginBottom: space.md }}>
                 <Pressable onPress={() => setOpen(expanded ? null : key)} accessibilityRole="button" accessibilityState={{ expanded }}>
@@ -93,6 +98,11 @@ export default function InteractionsScreen() {
                       <T variant="small" tone="soft">
                         {p.findings[0].title}
                       </T>
+                      {named.length ? (
+                        <T variant="small" tone="accent">
+                          Named stack: {named.map((t) => `${t.name} (${SOURCE_LABEL[t.source]})`).join(', ')}
+                        </T>
+                      ) : null}
                     </View>
                     <Badge label={LEVEL_LABEL[p.level]} tone={LEVEL_TONE[p.level]} />
                     {expanded ? <ChevronUp size={18} color={c.inkFaint} /> : <ChevronDown size={18} color={c.inkFaint} />}
@@ -110,6 +120,19 @@ export default function InteractionsScreen() {
                           {f.detail}
                         </T>
                       </View>
+                    ))}
+                    {named.map((t) => (
+                      <Pressable key={t.id} onPress={() => router.push(`/templates?q=${encodeURIComponent(t.name)}`)} accessibilityRole="link">
+                        <HStack>
+                          <SourceBadge source={t.source} />
+                          <T variant="smallStrong" style={{ flex: 1 }}>
+                            {t.name}
+                          </T>
+                        </HStack>
+                        <T tone="soft" style={{ marginTop: 4 }}>
+                          {summaryLine(t)}. {t.goal}
+                        </T>
+                      </Pressable>
                     ))}
                     {(!p.a.compound || !p.b.compound) && (
                       <T variant="small" tone="faint">
@@ -133,7 +156,7 @@ export default function InteractionsScreen() {
             Studied together: tested as a combination in human trials. No data: no rule applies, which is not evidence of safety.
           </T>
           <T variant="small" tone="soft">
-            This check does not replace a pharmacist reviewing all of your medicines.
+            Named stacks show that people run the pair together and how; the source label says who reports it.
           </T>
         </View>
       </Notice>

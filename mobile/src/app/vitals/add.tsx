@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { VitalKind } from '@/domain/model';
 import { atLocal, dateTimeLabel, formatNumber } from '@/features/health/format';
+import { mirrorAdded } from '@/features/health/sync';
 import { entriesOf, formatVital, isVitalKind, toDisplay, toStorage, unitFor, VITAL_KINDS, VITAL_META } from '@/features/health/vitals';
 import { useStore } from '@/store';
 import { Button, Chip, num, NumberField } from '@/ui/controls';
@@ -63,7 +64,7 @@ export default function AddVital() {
     if (Number.isNaN(at.getTime())) return setError('Enter a valid date.');
     if (at.getTime() > Date.now() + 5 * 60_000) return setError('The date and time are in the future.');
 
-    addVital({ kind, value: stored, ...(stored2 !== undefined ? { value2: stored2 } : {}), at: at.toISOString() });
+    mirrorAdded(addVital({ kind, value: stored, ...(stored2 !== undefined ? { value2: stored2 } : {}), at: at.toISOString() }));
     if (router.canGoBack()) router.back();
     else router.replace(`/vitals?kind=${kind}`);
   };

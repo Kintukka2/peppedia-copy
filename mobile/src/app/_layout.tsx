@@ -4,9 +4,11 @@ import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useSyncExternalStore } from 'react';
-import { View } from 'react-native';
+import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AUTO_SYNC_MS, shouldAutoSync, syncHealth } from '@/features/health/sync';
+import { healthSupported } from '@/lib/health';
 import { remindersSupported, syncReminders } from '@/lib/notifications';
 import { useStore } from '@/store';
 import { dailySnapshot } from '@/store/backup';
@@ -44,6 +46,25 @@ function ReminderSync() {
   return null;
 }
 
+/** Pulls new Health Connect data on launch, on return to the app and every 15 minutes while open. */
+function HealthAutoSync() {
+  const enabled = useStore((s) => s.settings.healthSync);
+  useEffect(() => {
+    if (!enabled || !healthSupported) return;
+    const run = () => {
+      if (shouldAutoSync()) syncHealth();
+    };
+    run();
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && run());
+    const timer = setInterval(run, AUTO_SYNC_MS);
+    return () => {
+      sub.remove();
+      clearInterval(timer);
+    };
+  }, [enabled]);
+  return null;
+}
+
 function Navigator() {
   const { c, dark } = useTheme();
   return (
@@ -57,6 +78,7 @@ function Navigator() {
         ))}
       </Stack>
       <ReminderSync />
+      <HealthAutoSync />
     </>
   );
 }

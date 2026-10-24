@@ -1,6 +1,6 @@
 import { format, startOfDay, subDays } from 'date-fns';
 import { router } from 'expo-router';
-import { Activity, BookOpen, Check, ChevronRight, Droplets, Package, Plus, Scale, ShieldAlert, SkipForward, Sparkles } from 'lucide-react-native';
+import { Activity, BookOpen, Check, ChevronRight, Droplets, Footprints, Package, Plus, Scale, ShieldAlert, SkipForward, Sparkles } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -10,6 +10,8 @@ import { checkStack, LEVEL_LABEL } from '@/domain/interactions';
 import { alerts, ALERT_LABEL, drawFor, forecast } from '@/domain/inventory';
 import { adherence, agendaForDay, dayKey, slotsOnDay, type AgendaItem } from '@/domain/schedule';
 import { formatAmount, fromKg, trim } from '@/domain/units';
+import { hasActivity, lastDays, STEP_GOAL, todayTotal } from '@/features/health/activity';
+import { formatNumber } from '@/features/health/format';
 import { greeting } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
 import { useStore } from '@/store';
@@ -31,6 +33,7 @@ export default function TodayScreen() {
   const vitals = useStore((s) => s.vitals);
   const journal = useStore((s) => s.journal);
   const labs = useStore((s) => s.labs);
+  const workouts = useStore((s) => s.workouts);
   const settings = useStore((s) => s.settings);
   const logDose = useStore((s) => s.logDose);
 
@@ -92,9 +95,16 @@ export default function TodayScreen() {
   }, [inventory, active, now]);
 
   const insights = useMemo(
-    () => buildInsights({ protocols, logs, inventory, vitals, journal, labs, sex: settings.sex, weightUnit: settings.weightUnit, now }).filter((i) => i.tone !== 'neutral').slice(0, 2),
-    [protocols, logs, inventory, vitals, journal, labs, settings.sex, settings.weightUnit, now],
+    () => buildInsights({ protocols, logs, inventory, vitals, journal, labs, workouts, sex: settings.sex, weightUnit: settings.weightUnit, now }).filter((i) => i.tone !== 'neutral').slice(0, 2),
+    [protocols, logs, inventory, vitals, journal, labs, workouts, settings.sex, settings.weightUnit, now],
   );
+
+  const activity = useMemo(() => {
+    if (!settings.healthSync && !hasActivity(vitals, workouts)) return null;
+    const week = lastDays(vitals, 'steps', 7, now);
+    // Days without data are left out of the sparkline so a quiet morning doesn't read as a crash.
+    return { steps: todayTotal(vitals, 'steps', now), exercise: todayTotal(vitals, 'exerciseMin', now), week: week.map((d, i) => ({ t: i, v: d.value })).filter((p) => p.v > 0) };
+  }, [settings.healthSync, vitals, workouts, now]);
 
   const featured = COMPOUNDS.length ? COMPOUNDS[Math.floor(now.getTime() / 86_400_000) % COMPOUNDS.length] : null;
   const isNew = protocols.length === 0 && logs.length === 0;
@@ -246,6 +256,27 @@ export default function TodayScreen() {
         </View>
       )}
 
+      {activity ? (
+        <Card onPress={() => router.push('/activity')} style={{ marginBottom: space.md }}>
+          <HStack style={{ justifyContent: 'space-between' }}>
+            <HStack gap={space.md} style={{ flex: 1 }}>
+              <View style={[styles.iconTile, { backgroundColor: c.accentSoft }]}>
+                <Footprints size={18} color={c.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <T variant="bodyStrong">{activity.steps === null ? 'No steps yet today' : `${Math.round(activity.steps).toLocaleString('en-US')} steps`}</T>
+                <T variant="small" tone="soft" numberOfLines={1}>
+                  {activity.exercise ? `${formatNumber(activity.exercise, 0)} min exercise · ` : ''}
+                  {settings.healthSync ? 'Google Fit via Health Connect' : 'Activity'}
+                </T>
+              </View>
+            </HStack>
+            {activity.week.length > 1 ? <Sparkline points={activity.week} color={c.accent} width={72} height={28} /> : null}
+            <Ring value={Math.min(1, (activity.steps ?? 0) / STEP_GOAL)} size={36} />
+          </HStack>
+        </Card>
+      ) : null}
+
       {!isNew && (
         <Section>
           <Card onPress={() => router.push('/levels')} style={{ marginBottom: space.md }}>
@@ -331,9 +362,6 @@ export default function TodayScreen() {
         </Section>
       )}
 
-      <T variant="small" tone="faint" center style={{ marginTop: space.sm }}>
-        Titra is an educational tool, not medical advice.
-      </T>
     </Screen>
   );
 }

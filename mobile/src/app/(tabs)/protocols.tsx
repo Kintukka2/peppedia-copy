@@ -88,13 +88,16 @@ export default function ProtocolsScreen() {
         </HStack>
       }>
       {protocols.length === 0 ? (
-        <EmptyState
-          icon={<Syringe size={22} color={c.accent} />}
-          title="No protocols yet"
-          body="A protocol is a compound, dose and schedule you follow. Add one to get reminders, an inventory forecast and estimated levels."
-          action="Create a protocol"
-          onAction={() => router.push('/protocol/form')}
-        />
+        <>
+          <EmptyState
+            icon={<Syringe size={22} color={c.accent} />}
+            title="No protocols yet"
+            body="A protocol is a compound, dose and schedule you follow. Start from a label, trial, clinic or community protocol, or build your own."
+            action="Create a protocol"
+            onAction={() => router.push('/protocol/form')}
+          />
+          <Button title="Browse the protocol library" kind="ghost" onPress={() => router.push('/templates')} style={{ marginTop: space.md }} />
+        </>
       ) : (
         <>
           {groups.active.length > 0 && <Section title="Active">{groups.active.map(card)}</Section>}
@@ -102,9 +105,7 @@ export default function ProtocolsScreen() {
           {groups.completed.length > 0 && <Section title="Completed">{groups.completed.map(card)}</Section>}
           <Gap />
           <Button title="New protocol" kind="secondary" icon={<Plus size={18} color={c.ink} />} onPress={() => router.push('/protocol/form')} />
-          <T variant="small" tone="faint" center style={{ marginTop: space.lg }}>
-            Protocols record what you choose to do. Titra does not recommend doses.
-          </T>
+          <Button title="Browse the protocol library" kind="ghost" onPress={() => router.push('/templates')} style={{ marginTop: space.sm }} />
         </>
       )}
     </Screen>

@@ -18,9 +18,10 @@ import type {
   Settings,
   Supply,
   VitalEntry,
+  Workout,
 } from '@/domain/model';
 
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;
 
 export interface Data {
   protocols: Protocol[];
@@ -30,6 +31,7 @@ export interface Data {
   vitals: VitalEntry[];
   journal: JournalEntry[];
   labs: LabResult[];
+  workouts: Workout[];
   bookmarks: string[];
   settings: Settings;
 }
@@ -44,6 +46,8 @@ export const DEFAULT_SETTINGS: Settings = {
   deductSupplies: true,
   askEndpoint: '',
   askToken: '',
+  healthSync: false,
+  healthWriteBack: false,
 };
 
 export const EMPTY_DATA: Data = {
@@ -54,6 +58,7 @@ export const EMPTY_DATA: Data = {
   vitals: [],
   journal: [],
   labs: [],
+  workouts: [],
   bookmarks: [],
   settings: DEFAULT_SETTINGS,
 };
@@ -73,8 +78,12 @@ interface Actions {
   deleteInventory: (id: ID) => void;
   upsertSupply: (s: Supply) => void;
   deleteSupply: (id: ID) => void;
-  addVital: (v: Omit<VitalEntry, 'id'>) => void;
+  addVital: (v: Omit<VitalEntry, 'id'>) => VitalEntry;
   deleteVital: (id: ID) => void;
+  /** Upserts synced records by `externalId`, so re-syncing updates instead of duplicating. */
+  mergeSynced: (input: { vitals: Omit<VitalEntry, 'id'>[]; workouts: Omit<Workout, 'id'>[] }) => { added: number; updated: number };
+  /** Removes everything that came from Health Connect; manual entries stay. */
+  clearSynced: () => void;
   upsertJournal: (j: JournalEntry) => void;
   addLab: (r: Omit<LabResult, 'id'>) => void;
   deleteLab: (id: ID) => void;
@@ -162,8 +171,43 @@ export const useStore = create<Store>()(
       upsertSupply: (x) => set((s) => ({ supplies: upsert(s.supplies, x) })),
       deleteSupply: (id) => set((s) => ({ supplies: s.supplies.filter((x) => x.id !== id) })),
 
-      addVital: (v) => set((s) => ({ vitals: [...s.vitals, { ...v, id: uid() }] })),
+      addVital: (v) => {
+        const entry = { ...v, id: uid() };
+        set((s) => ({ vitals: [...s.vitals, entry] }));
+        return entry;
+      },
       deleteVital: (id) => set((s) => ({ vitals: s.vitals.filter((v) => v.id !== id) })),
+
+      mergeSynced: (input) => {
+        let added = 0;
+        let updated = 0;
+        set((s) => {
+          const merge = <T extends { id: ID; externalId?: string }>(list: T[], incoming: Omit<T, 'id'>[]): T[] => {
+            const index = new Map(list.map((x, i) => [x.externalId, i] as const).filter(([k]) => k !== undefined));
+            const next = list.slice();
+            for (const item of incoming) {
+              const at = item.externalId !== undefined ? index.get(item.externalId) : undefined;
+              if (at === undefined) {
+                next.push({ ...item, id: uid() } as T);
+                if (item.externalId !== undefined) index.set(item.externalId, next.length - 1);
+                added++;
+              } else if (JSON.stringify({ ...next[at], id: undefined }) !== JSON.stringify({ ...item, id: undefined })) {
+                next[at] = { ...item, id: next[at].id } as T;
+                updated++;
+              }
+            }
+            return next;
+          };
+          return { vitals: merge(s.vitals, input.vitals), workouts: merge(s.workouts, input.workouts) };
+        });
+        return { added, updated };
+      },
+      clearSynced: () =>
+        set((s) => ({
+          vitals: s.vitals.filter((v) => v.source !== 'health-connect'),
+          workouts: s.workouts.filter((w) => w.source !== 'health-connect'),
+          settings: { ...s.settings, healthLastSync: undefined },
+        })),
 
       upsertJournal: (j) =>
         set((s) => {
@@ -202,6 +246,7 @@ export function pickData(s: Data): Data {
     vitals: s.vitals,
     journal: s.journal,
     labs: s.labs,
+    workouts: s.workouts,
     bookmarks: s.bookmarks,
     settings: s.settings,
   };
@@ -211,6 +256,8 @@ export function pickData(s: Data): Data {
 export function migrate(input: unknown): Data {
   const raw = (input && typeof input === 'object' ? input : {}) as Partial<Data>;
   const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+  // v1 gated the app behind a terms checkbox; v2 only records that onboarding ran.
+  const { acceptedTermsAt, ...settings } = (raw.settings ?? {}) as Partial<Settings> & { acceptedTermsAt?: string };
   return {
     protocols: list<Protocol>(raw.protocols),
     logs: list<DoseLog>(raw.logs),
@@ -219,8 +266,9 @@ export function migrate(input: unknown): Data {
     vitals: list<VitalEntry>(raw.vitals),
     journal: list<JournalEntry>(raw.journal),
     labs: list<LabResult>(raw.labs),
+    workouts: list<Workout>(raw.workouts),
     bookmarks: list<string>(raw.bookmarks),
-    settings: { ...DEFAULT_SETTINGS, ...(raw.settings ?? {}) },
+    settings: { ...DEFAULT_SETTINGS, ...settings, onboardedAt: settings.onboardedAt ?? acceptedTermsAt },
   };
 }
 

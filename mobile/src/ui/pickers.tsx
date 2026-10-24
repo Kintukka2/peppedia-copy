@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { CATEGORY_LABEL, COMPOUND_BY_ID, searchCompounds } from '@/data/library';
+import { templatesFor } from '@/data/protocols';
 import type { Compound } from '@/data/types';
 import type { AmountUnit } from '@/domain/model';
 import { DATE_RE, isValidDay } from '@/domain/schedule';
@@ -89,10 +90,14 @@ export function CompoundPicker({ onPick, onCustom }: { onPick: (c: Compound) => 
   const bookmarks = useStore((s) => s.bookmarks);
   const results = useMemo(() => {
     if (q) return searchCompounds(q).slice(0, 8);
-    // Saved compounds first, then approved medicines, so the empty state is useful.
+    // Saved compounds first, then the ones with the most protocols to start from.
     const saved = bookmarks.map((id) => COMPOUND_BY_ID[id]).filter((x): x is Compound => !!x);
-    const rest = searchCompounds('').filter((x) => !bookmarks.includes(x.id) && x.regulatory.status === 'approved');
-    return [...saved, ...rest].slice(0, 6);
+    const rest = searchCompounds('')
+      .filter((x) => !bookmarks.includes(x.id))
+      .map((x) => ({ x, n: templatesFor(x.id).length }))
+      .sort((a, b) => b.n - a.n)
+      .map(({ x }) => x);
+    return [...saved, ...rest].slice(0, 8);
   }, [q, bookmarks]);
   return (
     <View>

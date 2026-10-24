@@ -1,56 +1,39 @@
 import { router } from 'expo-router';
-import { BookOpenCheck, Check, Lock, Syringe } from 'lucide-react-native';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Activity, BookOpenCheck, Lock, Syringe } from 'lucide-react-native';
+import { View } from 'react-native';
 
 import { COMPOUNDS } from '@/data/library';
 import { useStore } from '@/store';
 import { importData } from '@/store/backup';
 import { buildSample } from '@/store/sample';
-import { Button, tap } from '@/ui/controls';
-import { Card, HStack, Screen } from '@/ui/layout';
+import { PROTOCOL_TEMPLATES } from '@/data/protocols';
+import { Button } from '@/ui/controls';
+import { HStack, Screen } from '@/ui/layout';
 import { T } from '@/ui/text';
 import { radius, space, useTheme } from '@/ui/theme';
-
-function Check2({ on, label, onPress }: { on: boolean; label: string; onPress: () => void }) {
-  const { c } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: on }}
-      onPress={() => {
-        tap();
-        onPress();
-      }}
-      style={{ flexDirection: 'row', gap: space.md, alignItems: 'flex-start', paddingVertical: space.sm }}>
-      <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: on ? c.accent : c.border, backgroundColor: on ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-        {on ? <Check size={16} color={c.accentInk} /> : null}
-      </View>
-      <T style={{ flex: 1 }}>{label}</T>
-    </Pressable>
-  );
-}
 
 export default function Onboarding() {
   const { c } = useTheme();
   const update = useStore((s) => s.updateSettings);
-  const [adult, setAdult] = useState(false);
-  const [edu, setEdu] = useState(false);
-  const ready = adult && edu;
 
   const finish = async (sample: boolean) => {
-    const acceptedTermsAt = new Date().toISOString();
+    const onboardedAt = new Date().toISOString();
     if (sample) {
       const data = buildSample();
-      await importData({ ...data, settings: { ...data.settings, acceptedTermsAt } });
-    } else update({ acceptedTermsAt });
+      await importData({ ...data, settings: { ...data.settings, onboardedAt } });
+    } else update({ onboardedAt });
     router.replace('/');
   };
 
   const points = [
-    { Icon: BookOpenCheck, title: 'An honest library', body: `${COMPOUNDS.length} compounds rated by regulatory status and human evidence. Unknowns are labelled as unknown.` },
+    {
+      Icon: BookOpenCheck,
+      title: 'The whole picture',
+      body: `${COMPOUNDS.length} compounds and ${PROTOCOL_TEMPLATES.length} ready-to-use protocols, each labelled as label, trial, clinic, community or vendor.`,
+    },
     { Icon: Syringe, title: 'A precise log', body: 'Protocols with titration and cycles, reminders, vial maths, estimated levels and site rotation.' },
-    { Icon: Lock, title: 'Private by default', body: 'No account. Your records stay on this device, with automatic snapshots and export.' },
+    { Icon: Activity, title: 'Google Fit, connected', body: 'Steps, workouts, sleep, heart rate and weight sync in through Health Connect.' },
+    { Icon: Lock, title: 'Yours alone', body: 'No account. Records stay on this phone, with automatic snapshots and export.' },
   ];
 
   return (
@@ -62,7 +45,7 @@ export default function Onboarding() {
       </View>
       <T variant="display">Welcome to Titra</T>
       <T tone="soft" style={{ marginTop: space.sm, marginBottom: space.xxl, fontSize: 17, lineHeight: 25 }}>
-        Peptide research you can trust, and a log that never loses your history.
+        Every protocol worth knowing, and a log that never loses your history.
       </T>
 
       {points.map(({ Icon, title, body }) => (
@@ -77,15 +60,11 @@ export default function Onboarding() {
         </HStack>
       ))}
 
-      <Card style={{ marginTop: space.md, marginBottom: space.xl }}>
-        <Check2 on={adult} onPress={() => setAdult(!adult)} label="I am 18 or older." />
-        <Check2 on={edu} onPress={() => setEdu(!edu)} label="I understand Titra is educational and for record-keeping. It is not medical advice and does not recommend doses." />
-      </Card>
-
-      <Button title="Start with an empty log" onPress={() => finish(false)} disabled={!ready} />
-      <Button title="Explore with sample data" kind="ghost" onPress={() => finish(true)} disabled={!ready} style={{ marginTop: space.sm }} />
+      <View style={{ height: space.lg }} />
+      <Button title="Start with an empty log" onPress={() => finish(false)} />
+      <Button title="Explore with sample data" kind="ghost" onPress={() => finish(true)} style={{ marginTop: space.sm }} />
       <T variant="small" tone="faint" center style={{ marginTop: space.md }}>
-        Sample data uses approved medicines at labelled regimens. You can clear it any time in Settings.
+        The sample has a tirzepatide titration, TRT with hCG and a BPC-157 + TB-500 repair blend. Clear it any time in Settings.
       </T>
     </Screen>
   );

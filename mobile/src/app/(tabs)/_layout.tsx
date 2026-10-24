@@ -7,8 +7,8 @@ import { fonts, useTheme } from '@/ui/theme';
 
 export default function TabLayout() {
   const { c } = useTheme();
-  const accepted = useStore((s) => s.settings.acceptedTermsAt);
-  if (!accepted) return <Redirect href="/onboarding" />;
+  const onboarded = useStore((s) => s.settings.onboardedAt);
+  if (!onboarded) return <Redirect href="/onboarding" />;
 
   return (
     <Tabs

@@ -1,7 +1,7 @@
 // Pairwise checks across the active stack. Rules match on mechanism classes
-// and describe pharmacology (shared receptors, additive effects). There are no
-// "synergy" claims, and a pair with no matching rule is reported as unknown
-// rather than safe.
+// and describe pharmacology (shared receptors, additive effects). A pair with
+// no matching rule is reported as unknown rather than safe. Named community,
+// clinic and vendor stacks are matched separately (data/protocols).
 
 import type { Compound, MechanismClass } from '@/data/types';
 

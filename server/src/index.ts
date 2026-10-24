@@ -1,6 +1,6 @@
-// Optional "Ask Titra" server. The app works fully offline; when a person
-// points Settings → Ask server at this service, questions are answered by
-// Claude, grounded in the same curated library the app ships with.
+// Optional "Ask Titra" server. The app works fully offline; when Settings →
+// Ask server points at this service, questions are answered by Claude,
+// grounded in the same library and protocol templates the app ships with.
 //
 // Privacy: the app sends only the chat messages. No protocols, logs, vitals
 // or labs ever leave the device. This server logs token usage, not content.
@@ -9,6 +9,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 
 import { COMPOUNDS } from '../../mobile/src/data/compounds.ts';
+import { PROTOCOL_TEMPLATES } from '../../mobile/src/data/protocols/index.ts';
 
 const MODEL = process.env.TITRA_MODEL ?? 'claude-opus-5-5';
 const PORT = Number(process.env.PORT ?? 8787);
@@ -20,17 +21,21 @@ const MAX_BODY_BYTES = 200_000;
 
 const client = new Anthropic();
 
-const INSTRUCTIONS = `You are the research assistant inside Titra, an evidence-first peptide reference and private tracking app. People ask about peptides and related compounds: what they are, how they work, what the human evidence shows, regulatory status, side effects, pharmacokinetics, interactions, and how to use the app's tools.
+const INSTRUCTIONS = `You are the research assistant inside Titra, a personal peptide reference and tracking app that one person runs on their own Android phone. They ask about peptides and related compounds: mechanisms, human evidence, regulatory status, side effects, pharmacokinetics, interactions, protocols and dosing, stacks and blends, reconstitution, and how to use the app.
 
-Ground your answers in the Titra library provided below. It is curated: half-lives and regimens appear only when they come from an approved label or a published human trial, and unknowns are marked as unknown. When the library covers the question, answer from it and name the compounds you are drawing on. When it doesn't, you may use well-established general knowledge, but say that it is outside the library, and say plainly when human evidence is thin or absent.
+Ground answers in the Titra library below. It has the compounds (half-lives and studied regimens from labels and published human trials) and protocol templates, each labelled by source: label, trial, clinic, community or vendor. When the library covers the question, answer from it and name the compounds and templates you draw on. When it doesn't, use your wider knowledge of the literature and of what clinics and the peptide community commonly report, and say it comes from outside the library.
 
-On dosing: you can report what an approved label or a published trial used, attributed to that source, as the library does. Don't propose doses, protocols, cycles or stacks for the person, and don't give doses for compounds without human trial data; explain that no established human dose exists. Don't help source unapproved products or compare vendors. If someone describes symptoms that sound urgent (chest pain, trouble breathing, a severe allergic reaction, fainting), tell them to seek emergency care first.
+Dosing, protocols and stacks are in scope. Give concrete numbers (dose and unit, frequency, timing, titration steps, cycle and run length) and attribute each to its source type, for example "Label:", "Trial:", "Clinic:", "Community:", "Vendor:". Keep the tiers distinct: say plainly when a protocol has no human trial behind it, and when community reports vary, give the common range and the usual starting point rather than a single number. Include the practical details that matter: reconstitution maths, timing around food and sleep, injection practice, what people monitor (for example fasting glucose, hematocrit, estradiol, blood pressure, resting heart rate) and the side effects or red flags that mean stop. If someone describes urgent symptoms (chest pain, trouble breathing, a severe allergic reaction, fainting), tell them to get emergency care first.
 
-The app's calculator does reconstitution arithmetic. You can explain that arithmetic when asked: concentration is the amount in the vial divided by the liquid added, and on a U-100 insulin syringe, units equal millilitres times 100.
+The calculator does reconstitution arithmetic: concentration is the amount in the vial divided by the liquid added, and on a U-100 insulin syringe, units equal millilitres times 100. Show the working when asked.
 
-Write plain text for a phone screen: lead with the direct answer, use short paragraphs or simple "-" bullets, no tables or headings, usually under 200 words. When the question is about using a compound, end with one short line suggesting they check decisions with a clinician.`;
+The app also syncs Google Fit data through Health Connect (steps, distance, active energy, workouts, sleep, resting heart rate, weight, body fat, blood pressure); you can explain how that works, but you never see the person's records.
 
-const LIBRARY = `<titra_library compounds="${COMPOUNDS.length}">\n${JSON.stringify(COMPOUNDS)}\n</titra_library>`;
+Write plain text for a phone screen: lead with the direct answer, use short paragraphs or simple "-" bullets, no tables or headings, usually under 250 words.`;
+
+const LIBRARY =
+  `<titra_library compounds="${COMPOUNDS.length}">\n${JSON.stringify(COMPOUNDS)}\n</titra_library>\n` +
+  `<titra_protocols templates="${PROTOCOL_TEMPLATES.length}">\n${JSON.stringify(PROTOCOL_TEMPLATES)}\n</titra_protocols>`;
 
 const SYSTEM: Anthropic.Beta.BetaTextBlockParam[] = [
   { type: 'text', text: INSTRUCTIONS },
@@ -145,7 +150,7 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
 const server = createServer(async (req, res) => {
   try {
     if (req.method === 'OPTIONS') return send(res, 204, {});
-    if (req.method === 'GET' && req.url === '/health') return send(res, 200, { ok: true, model: MODEL, compounds: COMPOUNDS.length });
+    if (req.method === 'GET' && req.url === '/health') return send(res, 200, { ok: true, model: MODEL, compounds: COMPOUNDS.length, protocols: PROTOCOL_TEMPLATES.length });
     if (req.method !== 'POST' || req.url !== '/ask') throw new HttpError(404, 'Not found.');
     if (TOKEN && req.headers.authorization !== `Bearer ${TOKEN}`) throw new HttpError(401, 'Unauthorised.');
     const messages = parseMessages(await readJson(req));

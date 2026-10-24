@@ -5,6 +5,7 @@ import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } 
 
 import type { SeriesPoint } from '@/domain/pk';
 
+import { T } from './text';
 import { fonts, useTheme } from './theme';
 
 function pathFrom(points: { x: number; y: number }[]): string {
@@ -241,5 +242,33 @@ export function Ring({ value, size = 44, color, label }: { value: number; size?:
         </SvgText>
       ) : null}
     </Svg>
+  );
+}
+
+/** Daily bars with an optional goal line. Bars at or over the goal use the full colour. */
+export function Bars({ values, goal, color, height = 120 }: { values: { label: string; value: number }[]; goal?: number; color?: string; height?: number }) {
+  const { c } = useTheme();
+  const col = color ?? c.accent;
+  const max = Math.max(goal ?? 0, ...values.map((v) => v.value), 1);
+  return (
+    <View>
+      <View style={{ height, flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
+        {goal ? <View style={{ position: 'absolute', left: 0, right: 0, bottom: (goal / max) * height, borderTopWidth: 1, borderStyle: 'dashed', borderColor: c.inkFaint }} /> : null}
+        {values.map((v, i) => (
+          <View
+            key={i}
+            accessibilityLabel={`${v.label}: ${Math.round(v.value)}`}
+            style={{ flex: 1, height: Math.max(2, (v.value / max) * height), borderRadius: 4, backgroundColor: col, opacity: goal && v.value < goal ? 0.45 : 1 }}
+          />
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+        {values.map((v, i) => (
+          <T key={i} variant="small" tone="faint" center style={{ flex: 1, fontSize: 11 }} numberOfLines={1}>
+            {v.label}
+          </T>
+        ))}
+      </View>
+    </View>
   );
 }

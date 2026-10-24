@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { Boxes, ChevronDown, ChevronUp, Plus, X } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { blend, diluentForTargetUnits, drawFromConcentration, oil, premixed, reconstitute, SOMATROPIN_IU_PER_MG } from '@/domain/calculator';
 import type { AmountUnit, SyringeId } from '@/domain/model';
+import { doseOn } from '@/domain/schedule';
 import { convertAmount, formatAmount, SYRINGES, trim, UNITS_PER_ML } from '@/domain/units';
 import { unitsText } from '@/features/inventory/format';
 import { AmountInput, QuickChips } from '@/features/inventory/ui';
@@ -95,6 +96,9 @@ function SaveButton({ onPress, disabled }: { onPress: () => void; disabled?: boo
 
 function ReconstitutePanel({ syringe, picker, active }: PanelProps) {
   const { c } = useTheme();
+  const protocols = useStore((s) => s.protocols);
+  const inventory = useStore((s) => s.inventory);
+  const mine = useMemo(() => protocols.filter((p) => p.status === 'active' && p.route !== 'oral'), [protocols]);
   const [vial, setVial] = useState('5');
   const [vialUnit, setVialUnit] = useState<AmountUnit>('mg');
   const [water, setWater] = useState('2');
@@ -114,6 +118,22 @@ function ReconstitutePanel({ syringe, picker, active }: PanelProps) {
   const solved = diluentForTargetUnits(vialAmount, doseAmount, num(target));
   const spec = SYRINGES[syringe];
 
+  /** Fills the dose from a protocol (today's titration step) and the vial and water from its linked powder vial. */
+  const fillFrom = (id: string) => {
+    const p = mine.find((x) => x.id === id);
+    if (!p) return;
+    const d = doseOn(p, new Date());
+    setDose(trim(d.value));
+    setDoseUnit(d.unit);
+    const item = inventory.find((i) => i.id === p.inventoryId && i.form === 'powder');
+    if (item) {
+      setVial(trim(item.components[0].amount.value));
+      setVialUnit(item.components[0].amount.unit === 'iu' ? 'iu' : 'mg');
+      if (item.components[0].amount.unit === 'mcg') setVial(trim(item.components[0].amount.value / 1000));
+      if (item.open?.diluentMl) setWater(trim(item.open.diluentMl));
+    }
+  };
+
   const convertToIu = () => {
     if (vialUnit !== 'iu') {
       setVial(trim(total * SOMATROPIN_IU_PER_MG));
@@ -130,6 +150,18 @@ function ReconstitutePanel({ syringe, picker, active }: PanelProps) {
       <T tone="soft" style={{ marginBottom: space.lg }}>
         A powder vial mixed with bacteriostatic water.
       </T>
+      {mine.length ? (
+        <View style={{ marginBottom: space.lg }}>
+          <T variant="smallStrong" tone="soft" style={{ marginBottom: space.sm }}>
+            Fill from a protocol
+          </T>
+          <HStack wrap>
+            {mine.map((p) => (
+              <Chip key={p.id} label={`${p.name} · ${formatAmount(doseOn(p, new Date()))}`} onPress={() => fillFrom(p.id)} />
+            ))}
+          </HStack>
+        </View>
+      ) : null}
       <AmountInput label="Powder in the vial" value={vial} onChangeText={setVial} unit={vialUnit} onUnit={setVialUnit} units={['mg', 'iu']} placeholder="Amount on the label" />
       <QuickChips
         values={VIAL_MG}
@@ -518,7 +550,7 @@ export default function CalculatorScreen() {
       <HStack style={{ marginTop: space.xl, justifyContent: 'center' }}>
         <Dot color={c.inkFaint} size={4} />
         <T variant="small" tone="faint" style={{ flexShrink: 1 }}>
-          Arithmetic on the values you enter. It does not recommend a dose.
+          U-100 insulin syringes: 100 units = 1 mL. Every result updates as you type.
         </T>
       </HStack>
     </Screen>

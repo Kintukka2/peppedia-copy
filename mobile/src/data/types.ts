@@ -1,6 +1,6 @@
-// Library content types. The library is evidence-first: pharmacokinetics and
-// dosing appear only where reliable human data (an approved label or published
-// human trials) exists. Everything else is stated as unknown.
+// Library content types. Pharmacokinetics and studied regimens come only from
+// labels and published human trials. Protocol templates also carry clinic,
+// community and vendor practice, and every template says which one it is.
 
 export type CompoundCategory =
   | 'metabolic'
@@ -101,7 +101,7 @@ export interface Compound {
   routes: Route[];
   /** Omit when there is no reliable human PK data. */
   pk?: PharmacokineticData;
-  /** Only regimens from an approved label or a published human trial. Empty otherwise. */
+  /** Regimens from an approved label or a published human trial, as text. Structured, usable versions live in protocol templates. */
   studiedRegimens: StudiedRegimen[];
   commonSideEffects: string[];
   seriousRisks: string[];
@@ -111,5 +111,67 @@ export interface Compound {
   /** Anti-doping status where well established, e.g. "Prohibited at all times (WADA S2)". */
   antiDoping?: string;
   /** Official label pages or literature search links. No fabricated citations. */
+  sources: SourceLink[];
+}
+
+/**
+ * Where a protocol template comes from. `label` and `trial` are formal human
+ * data; `clinic`, `community` and `vendor` are reported practice and carry no
+ * trial backing. The app labels every template with its source.
+ */
+export type ProtocolSource = 'label' | 'trial' | 'clinic' | 'community' | 'vendor';
+
+export type DoseUnit = 'mcg' | 'mg' | 'iu';
+
+export interface Dose {
+  value: number;
+  unit: DoseUnit;
+}
+
+/** Same shape as the user's protocol schedule. Days are 0 = Sunday … 6 = Saturday; times are `HH:mm`. */
+export type TemplateSchedule =
+  | { kind: 'daily'; times: string[] }
+  | { kind: 'everyNDays'; n: number; time: string }
+  | { kind: 'weekdays'; days: number[]; time: string }
+  | { kind: 'asNeeded' };
+
+export interface TemplateComponent {
+  compoundId: string;
+  /** Dose per administration (the starting dose when the template titrates). */
+  dose: Dose;
+  /** Range commonly reported for this dose, in the same unit. */
+  range?: { min: number; max: number };
+}
+
+export interface ProtocolTemplate {
+  /** Unique slug, e.g. "bpc-157-community-healing". */
+  id: string;
+  /** Short name, e.g. "Injury repair" or "Wegovy titration". */
+  name: string;
+  source: ProtocolSource;
+  /** Who reports it, plainly, e.g. "Common across r/Peptides and peptide-clinic intake sheets". */
+  reportedBy: string;
+  /** What people use it for, one line. */
+  goal: string;
+  route: Route;
+  /**
+   * `single`: one compound. `stack`: several compounds dosed separately (each
+   * becomes its own protocol). `blend`: several compounds premixed in one vial
+   * and injected together (dosed by the first component).
+   */
+  kind: 'single' | 'stack' | 'blend';
+  /** One entry for `single`; two or more for `stack` and `blend`. */
+  components: TemplateComponent[];
+  schedule: TemplateSchedule;
+  /** Dose steps for the first component, in order. Each holds for `weeks`; the last holds indefinitely. */
+  titration?: { weeks: number; dose: Dose }[];
+  cycle?: { onWeeks: number; offWeeks: number };
+  /** Typical run length. Omit when open-ended. */
+  durationWeeks?: number;
+  /** Per-vial amounts for a premixed blend, as sold, e.g. GLOW 70 mg. */
+  blendVial?: { compoundId: string; amount: Dose }[];
+  /** Practical notes: timing, fasting, reconstitution, what people watch for. */
+  notes: string[];
+  /** Pages that report it. Real URLs only. */
   sources: SourceLink[];
 }

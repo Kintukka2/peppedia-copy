@@ -4,7 +4,7 @@
 
 import { addDays, differenceInCalendarDays, format, startOfDay } from 'date-fns';
 
-import type { Amount, ClockTime, DoseLog, Protocol } from './model';
+import type { Amount, ClockTime, Cycle, DoseLog, Protocol, Schedule } from './model';
 
 export function parseDay(day: string): Date {
   const [y, m, d] = day.split('-').map(Number);
@@ -194,7 +194,10 @@ export function adherence(protocol: Protocol, logs: DoseLog[], from: Date, to: D
 }
 
 export function describeSchedule(protocol: Protocol): string {
-  const s = protocol.schedule;
+  return describeScheduleOf(protocol.schedule, protocol.cycle);
+}
+
+export function describeScheduleOf(s: Schedule, c?: Cycle): string {
   const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   let text: string;
   switch (s.kind) {
@@ -210,7 +213,6 @@ export function describeSchedule(protocol: Protocol): string {
     case 'asNeeded':
       text = 'As needed';
   }
-  const c = protocol.cycle;
   if (c && c.onWeeks > 0 && c.offWeeks > 0) text += ` · ${c.onWeeks} on / ${c.offWeeks} off`;
   return text;
 }

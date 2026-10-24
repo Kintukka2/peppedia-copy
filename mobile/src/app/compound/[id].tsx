@@ -4,8 +4,10 @@ import { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { CATEGORY_LABEL, getCompound, ROUTE_LABEL } from '@/data/library';
+import { templatesFor } from '@/data/protocols';
 import { checkPair, LEVEL_LABEL } from '@/domain/interactions';
 import { paramsFor, sampleSeries } from '@/domain/pk';
+import { TemplateCard } from '@/features/protocols/components';
 import { formatHours, openLink } from '@/lib/links';
 import { useStore } from '@/store';
 import { Button } from '@/ui/controls';
@@ -36,6 +38,7 @@ export default function CompoundScreen() {
   const { c } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const compound = getCompound(id);
+  const templates = useMemo(() => (compound ? templatesFor(compound.id) : []), [compound]);
   const bookmarks = useStore((s) => s.bookmarks);
   const toggleBookmark = useStore((s) => s.toggleBookmark);
   const protocols = useStore((s) => s.protocols);
@@ -167,12 +170,20 @@ export default function CompoundScreen() {
             </T>
           </Card>
         ) : (
-          <Notice title="No reliable human pharmacokinetic data">Titra does not estimate levels for this compound rather than guess a half-life.</Notice>
+          <Notice title="No reliable human pharmacokinetic data">No published human half-life, so Titra doesn’t draw a level curve for it.</Notice>
         )}
       </Section>
 
-      <Section title="Studied regimens">
-        {compound.studiedRegimens.length ? (
+      <Section title={`Protocols (${templates.length})`}>
+        {templates.length ? (
+          templates.map((t, i) => <TemplateCard key={t.id} template={t} defaultOpen={i === 0 && templates.length === 1} />)
+        ) : (
+          <Notice>No protocol templates for this compound yet. Track it with your own dose and schedule.</Notice>
+        )}
+      </Section>
+
+      {compound.studiedRegimens.length ? (
+        <Section title="Studied regimens">
           <Card style={{ paddingVertical: space.xs }}>
             {compound.studiedRegimens.map((r, i) => (
               <View key={i} style={{ paddingVertical: space.md, borderBottomWidth: i < compound.studiedRegimens.length - 1 ? 1 : 0, borderBottomColor: c.border }}>
@@ -184,15 +195,8 @@ export default function CompoundScreen() {
               </View>
             ))}
           </Card>
-        ) : (
-          <Notice>No dosing regimen has been established in published human trials. Titra does not list community or vendor protocols.</Notice>
-        )}
-        {compound.studiedRegimens.length ? (
-          <T variant="small" tone="faint" style={{ marginTop: space.sm }}>
-            Shown for reference as studied or labelled. Not a recommendation; dosing is a decision for you and your prescriber.
-          </T>
-        ) : null}
-      </Section>
+        </Section>
+      ) : null}
 
       {compound.commonSideEffects.length ? (
         <Section title="Common side effects">
@@ -244,10 +248,6 @@ export default function CompoundScreen() {
           ))}
         </Card>
       </Section>
-
-      <Notice tone="warn" title="Educational information">
-        This page summarises published information. It is not medical advice and does not suggest anyone use this compound. Unapproved products are sold without quality control.
-      </Notice>
     </Screen>
   );
 }
